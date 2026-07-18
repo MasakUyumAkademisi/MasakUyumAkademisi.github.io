@@ -1,312 +1,98 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import {
+  examRules,
+  getLessonById,
+  getModuleById,
+  getQuestionsForModule,
+  lessonContentById,
+  lessons,
+  modules,
+  questions,
+  type ModuleId,
+  type Question,
+} from "./content";
 
-type ViewId = "today" | "lessons" | "practice" | "exam" | "progress";
+type ViewId = "lessons" | "practice" | "exam" | "progress";
+type ExamMode = ModuleId | "mixed";
+type AnswerMap = Record<string, number>;
 
-type Lesson = {
+type ExamResult = {
   id: string;
-  moduleId: string;
+  mode: ExamMode;
   title: string;
-  summary: string;
-  examPoint: string;
-  confusion: string;
-  keyCards: { term: string; detail: string }[];
+  total: number;
+  correct: number;
+  wrong: number;
+  blank: number;
+  score: number;
+  durationSeconds: number;
+  finishedAt: string;
+  topicBreakdown: Record<string, { total: number; correct: number; wrong: number; blank: number }>;
 };
 
-type Module = {
-  id: string;
-  name: string;
-  shortName: string;
-  focus: string;
-  color: string;
-};
-
-type Question = {
-  id: string;
-  lessonId: string;
-  moduleId: string;
-  difficulty: "Temel" | "Orta" | "Sınav";
-  prompt: string;
-  options: string[];
-  answer: number;
-  explanation: string;
-  confusion: string;
-  source: string;
+type ExamSession = {
+  mode: ExamMode;
+  title: string;
+  questions: Question[];
+  currentIndex: number;
+  answers: AnswerMap;
+  marked: string[];
+  remainingSeconds: number;
+  status: "running" | "review" | "finished";
+  startedAt: number;
 };
 
 type ProgressState = {
+  version: 2;
   completedLessons: string[];
   answered: Record<string, boolean>;
   weakTags: Record<string, number>;
   lastSession: string;
+  examHistory: ExamResult[];
+  lastLegislationCheck: string;
 };
-
-const defaultProgress: ProgressState = {
-  completedLessons: [],
-  answered: {},
-  weakTags: {},
-  lastSession: "Henüz oturum yok",
-};
-
-const modules: Module[] = [
-  {
-    id: "mod1",
-    name: "Modül 1 - Kurumsal Çerçeve ve Suç Tipleri",
-    shortName: "Modül 1",
-    focus: "MASAK, MİB modelleri, FATF, yaptırımlar ve temel suçlar",
-    color: "#0f766e",
-  },
-  {
-    id: "mod2",
-    name: "Modül 2 - Uyum Programı ve Yükümlülükler",
-    shortName: "Modül 2",
-    focus: "Yükümlüler, uyum görevlisi, KYC, ŞİB, erteleme ve transferler",
-    color: "#3157a4",
-  },
-];
-
-const lessons: Lesson[] = [
-  {
-    id: "masak-gorev",
-    moduleId: "mod1",
-    title: "MASAK ve Görevleri",
-    summary:
-      "MASAK, suç gelirlerinin aklanması ve terörizmin finansmanıyla mücadelede mali istihbarat üreten, veriyi analiz eden ve ilgili makamlarla paylaşan merkezî idari birimdir. Kolluk veya mahkeme gibi doğrudan soruşturma yürüten bir yapı değildir.",
-    examPoint:
-      "Sınavda MASAK'ın analiz-inceleme görevi ile savcılığın soruşturma yetkisi sık karıştırılır.",
-    confusion:
-      "MASAK dava açmaz; şüpheyi analiz eder, raporlar ve ilgili adli/idari sürece bilgi sağlar.",
-    keyCards: [
-      { term: "Statü", detail: "Hazine ve Maliye Bakanlığına bağlı idari birim." },
-      { term: "Ana rol", detail: "Bildirimleri almak, analiz etmek ve paylaşmak." },
-      { term: "Yetki sınırı", detail: "Kolluk faaliyeti veya kamu davası açma yetkisi yoktur." },
-      { term: "Koordinasyon", detail: "Kurumlar arası politika ve uygulama uyumunu destekler." },
-    ],
-  },
-  {
-    id: "mib-fatf",
-    moduleId: "mod1",
-    title: "Mali İstihbarat Birimleri ve FATF",
-    summary:
-      "Mali istihbarat birimleri finansal bildirimleri toplar, operasyonel ve stratejik analiz yapar. FATF ise ülkelerin aklama, terörizmin finansmanı ve kitle imha silahlarının yayılmasının finansmanıyla mücadele standartlarını belirleyen yapıdır.",
-    examPoint:
-      "FATF tavsiyeleri 'tavsiye' adını taşısa da karşılıklı değerlendirme, gri liste ve takip süreçleri nedeniyle sınavda bağlayıcı etki mantığıyla ele alınır.",
-    confusion:
-      "İdari tip MİB ile kolluk/adli tip MİB arasındaki fark, soru köklerinde yetki örnekleriyle sorulur.",
-    keyCards: [
-      { term: "İdari tip", detail: "Finans sektörü ile adli makamlar arasında analiz tamponu kurar." },
-      { term: "FATF 40 Tavsiye", detail: "Küresel AML/CFT standardının ana çerçevesidir." },
-      { term: "Operasyonel analiz", detail: "Belirli kişi, işlem veya olaya odaklanır." },
-      { term: "Stratejik analiz", detail: "Eğilim, tipoloji ve risk alanlarını ortaya çıkarır." },
-    ],
-  },
-  {
-    id: "aklama-tf",
-    moduleId: "mod1",
-    title: "Aklama, Terörizmin Finansmanı ve Yaptırımlar",
-    summary:
-      "Aklama suçu, suçtan kaynaklanan malvarlığı değerinin kaynağını gizleme veya meşru görünüm kazandırma ekseninde değerlendirilir. Terörizmin finansmanında kaynağın yasal veya yasa dışı olması tek başına belirleyici değildir; kullanım amacı önemlidir.",
-    examPoint:
-      "Aklamada kaynak suç geliri, terörizmin finansmanında ise fonun terör amacıyla bağlantısı kritik ayrımdır.",
-    confusion:
-      "Malvarlığının dondurulması, el koyma veya müsadere ile aynı kavram değildir; tasarruf yetkisinin sınırlandırılmasıdır.",
-    keyCards: [
-      { term: "Aklama", detail: "Suç gelirine meşru görünüm kazandırma amacı öne çıkar." },
-      { term: "TF", detail: "Fonun amacı ve bağlantısı belirleyicidir." },
-      { term: "Dondurma", detail: "Malvarlığı üzerinde tasarruf imkanını sınırlar." },
-      { term: "KİS finansmanı", detail: "Yayılmanın finansmanı uluslararası yaptırım rejimleriyle ilişkilidir." },
-    ],
-  },
-  {
-    id: "yukumluler",
-    moduleId: "mod2",
-    title: "Yükümlüler ve Uyum Sorumluluğu",
-    summary:
-      "Yükümlü kavramı sadece bankaları değil, finansal sisteme giriş veya transfer kanalı olabilen birçok kişi ve kurumu kapsar. Uyum programı, risk yönetimi, izleme-kontrol, eğitim ve iç denetim bileşenleriyle yürütülür.",
-    examPoint:
-      "Yükümlü, uyum görevlisi ve yönetim kurulu sorumluluğu sınavda rol ayrımı olarak sorulur.",
-    confusion:
-      "Uyum görevlisi operasyonu tek başına üstlenen kişi değildir; kurumun uyum sisteminin izlenmesinde kilit sorumludur.",
-    keyCards: [
-      { term: "Yükümlü", detail: "Mevzuatta AML/CFT tedbirlerini uygulamakla sorumlu aktör." },
-      { term: "Uyum programı", detail: "Politika, risk yönetimi, kontrol, eğitim ve denetim bütünü." },
-      { term: "Yönetim sorumluluğu", detail: "Uyum kültürü ve kaynak tahsisinde üst yönetim belirleyicidir." },
-      { term: "Finansal grup", detail: "Grup seviyesinde ortak politika ve gözetim gerektirebilir." },
-    ],
-  },
-  {
-    id: "kyc-sib",
-    moduleId: "mod2",
-    title: "Müşterinin Tanınması ve ŞİB",
-    summary:
-      "Müşterinin tanınması kimlik tespiti, gerçek faydalanıcıyı anlama, iş ilişkisinin amacını değerlendirme ve risk seviyesine göre sürekli izleme bileşenlerinden oluşur. Şüpheli işlem bildirimi ise şüphe oluştuğunda gecikmeden MASAK'a iletilen bildirimdir.",
-    examPoint:
-      "KYC sadece başlangıçta kimlik almak değildir; risk temelli ve sürekli izleme gerektirir.",
-    confusion:
-      "ŞİB yapılması, müşteriye bildirilmez; bildirim gizliliği sınavın klasik çeldiricisidir.",
-    keyCards: [
-      { term: "KYC", detail: "Kimlik, temsil yetkisi, gerçek faydalanıcı ve iş ilişkisinin amacı." },
-      { term: "Risk temelli yaklaşım", detail: "Tedbir yoğunluğu müşteri, ürün, kanal ve ülke riskine göre artar." },
-      { term: "ŞİB", detail: "Şüphe olduğunda MASAK'a yapılan gizli bildirim." },
-      { term: "Gizlilik", detail: "Bildirim yapıldığı müşteriye veya ilgililere açıklanmaz." },
-    ],
-  },
-  {
-    id: "erteleme-transfer",
-    moduleId: "mod2",
-    title: "İşlem Erteleme, Elektronik ve Kripto Transferler",
-    summary:
-      "Riskli işlemlerde özel dikkat, işlem amacı hakkında bilgi toplama ve kayıtların muhafazası gerekir. Elektronik ve kripto varlık transferlerinde gönderici/alıcı bilgisinin aktarımı, izleme ve riskli ülke ilişkileri sınav odağıdır.",
-    examPoint:
-      "İşlem erteleme ve transfer bilgisi yükümlülükleri süre, kapsam ve bildirim mantığıyla çalışılmalıdır.",
-    confusion:
-      "Elektronik transfer yükümlülüğü sadece bankacılık havalesi gibi düşünülmemelidir; ödeme ve kripto ekosistemi de risk odağıdır.",
-    keyCards: [
-      { term: "Özel dikkat", detail: "Karmaşık, olağandışı veya makul amacı belirsiz işlemler." },
-      { term: "Erteleme", detail: "Şüpheli işlemin gerçekleşmesini önlemek için devreye giren mekanizma." },
-      { term: "Seyahat kuralı", detail: "Transferde taraf bilgilerinin izlenebilirliğini güçlendirir." },
-      { term: "Teknolojik risk", detail: "Uzaktan kanal, dolandırıcılık ve anomali izleme kontrolleri gerekir." },
-    ],
-  },
-];
-
-const questions: Question[] = [
-  {
-    id: "q1",
-    lessonId: "masak-gorev",
-    moduleId: "mod1",
-    difficulty: "Temel",
-    prompt: "MASAK'ın sınavlarda özellikle vurgulanan temel niteliği aşağıdakilerden hangisidir?",
-    options: [
-      "Doğrudan kamu davası açan adli makamdır.",
-      "Mali istihbarat üreten ve analiz yapan idari birimdir.",
-      "Her şüpheli işlemde otomatik el koyma kararı verir.",
-      "Sadece bankaların iç denetimini yapan özel kuruldur.",
-    ],
-    answer: 1,
-    explanation:
-      "MASAK mali istihbarat ve analiz fonksiyonuyla öne çıkar. Soruşturma ve kamu davası açma yetkisi adli makamların alanındadır.",
-    confusion: "Analiz-inceleme ile soruşturma-kovuşturma ayrımını ayır.",
-    source: "mufettis.org Modül 1 konu anlatımı",
-  },
-  {
-    id: "q2",
-    lessonId: "mib-fatf",
-    moduleId: "mod1",
-    difficulty: "Orta",
-    prompt: "İdari tip mali istihbarat biriminin ayırt edici avantajı hangisidir?",
-    options: [
-      "Tüm dosyalarda mahkeme kararı olmadan ceza verir.",
-      "Finans sektörü ile adli/kolluk makamları arasında analiz tamponu kurar.",
-      "Sadece stratejik analiz yapar, operasyonel analiz yapamaz.",
-      "Bildirimleri doğrudan kamuoyuna açıklar.",
-    ],
-    answer: 1,
-    explanation:
-      "İdari tip modelde bildirimler önce uzmanlaşmış idari birimde analiz edilir; bu yapı finans sektörü ile kolluk/adli süreç arasında filtre görevi görür.",
-    confusion: "İdari tip MİB kolluk tipi MİB değildir.",
-    source: "mufettis.org ana konu anlatımı",
-  },
-  {
-    id: "q3",
-    lessonId: "aklama-tf",
-    moduleId: "mod1",
-    difficulty: "Sınav",
-    prompt: "Aklama suçu ile terörizmin finansmanı arasındaki sınavlık ayrım için en doğru ifade hangisidir?",
-    options: [
-      "Aklamada fonun kullanım amacı, terörizmin finansmanında kaynağı tek belirleyicidir.",
-      "İki kavram aynı unsurlarla oluşur, ayrım sadece ceza miktarındadır.",
-      "Aklamada suçtan kaynaklanan malvarlığı değeri, terörizmin finansmanında fonun amacı ve bağlantısı önemlidir.",
-      "Terörizmin finansmanı sadece yasa dışı kaynaktan sağlanan fonlarla oluşur.",
-    ],
-    answer: 2,
-    explanation:
-      "Aklamada suç geliri ve meşru görünüm kazandırma mantığı öne çıkar. Terörizmin finansmanında fonun yasal kaynaktan gelmesi ihtimali ayrımı ortadan kaldırmaz.",
-    confusion: "TF sorularında 'yasal kaynak' çeldiricisine dikkat et.",
-    source: "MASAK çalışma notları ve mufettis.org özetleri",
-  },
-  {
-    id: "q4",
-    lessonId: "yukumluler",
-    moduleId: "mod2",
-    difficulty: "Temel",
-    prompt: "Uyum programı aşağıdaki unsurlardan hangisini doğal olarak içerir?",
-    options: [
-      "Sadece yılda bir yapılan personel sınavını",
-      "Politika, risk yönetimi, izleme-kontrol, eğitim ve iç denetim bileşenlerini",
-      "Yalnızca müşteriden imza örneği alınmasını",
-      "Sadece dış denetçinin hazırladığı finansal raporu",
-    ],
-    answer: 1,
-    explanation:
-      "Uyum programı tek işlemden ibaret değildir; kurum politikası, risk yönetimi, izleme-kontrol, eğitim ve iç denetim gibi bileşenlerle sistem kurar.",
-    confusion: "Uyum programını tek belge veya tek kişi gibi düşünme.",
-    source: "mufettis.org Modül 2 konu anlatımı",
-  },
-  {
-    id: "q5",
-    lessonId: "kyc-sib",
-    moduleId: "mod2",
-    difficulty: "Sınav",
-    prompt: "Şüpheli işlem bildirimiyle ilgili aşağıdaki ifadelerden hangisi sınav mantığına göre doğrudur?",
-    options: [
-      "Bildirim yapıldığı müşteriye açıklanmalıdır.",
-      "Şüphe oluştuğunda MASAK'a gizli şekilde bildirilir.",
-      "Sadece işlem tamamlandıktan bir yıl sonra yapılabilir.",
-      "Yalnızca mahkeme talimatı varsa yapılır.",
-    ],
-    answer: 1,
-    explanation:
-      "ŞİB şüphe oluştuğunda yapılır ve bildirim gizliliği korunur. Müşteriye veya ilgililere açıklama yapılması sınavda tipik yanlış seçenektir.",
-    confusion: "ŞİB ile müşteriyi uyarma davranışını aynılaştırma.",
-    source: "mufettis.org özet ve MASAK çalışma notları",
-  },
-  {
-    id: "q6",
-    lessonId: "erteleme-transfer",
-    moduleId: "mod2",
-    difficulty: "Orta",
-    prompt: "Karmaşık ve olağandışı büyüklükte, makul ekonomik amacı belirsiz işlemler için yükümlünün temel yaklaşımı ne olmalıdır?",
-    options: [
-      "İşlemi her durumda sorgusuz tamamlamak",
-      "Özel dikkat göstermek, işlem amacı hakkında bilgi edinmek ve kayıtları muhafaza etmek",
-      "Müşteriyi bildirim yapıldığı konusunda bilgilendirmek",
-      "Sadece işlem küçük tutarlıysa kayıt almak",
-    ],
-    answer: 1,
-    explanation:
-      "Özel dikkat gerektiren işlemlerde amaç ve mahiyet mümkün olduğunca anlaşılmalı, bilgi ve belgeler yetkililere sunulabilecek şekilde muhafaza edilmelidir.",
-    confusion: "Küçük tutar her zaman düşük risk anlamına gelmez.",
-    source: "MASAK çalışma notları, özel dikkat gerektiren işlemler",
-  },
-];
-
-const sources = [
-  {
-    title: "MASAK Uyum Görevlisi Yetkilendirme Ders Notları",
-    url: "https://mufettis.org/category/masak-uyum-gorevlisi-yetkilendirme-ders-notlari/",
-    note: "Kategori ve modül listesi",
-  },
-  {
-    title: "Konu Anlatımı ve Çözümlü Sorular",
-    url: "https://mufettis.org/masak-uyum-gorevlisi-yetkilendirme-sinavi-konu-anlatimi-ve-cozumlu-sorular/",
-    note: "Modül başlıkları ve örnek soru formatı",
-  },
-  {
-    title: "MASAK_Rehber_12-01-2026.pdf",
-    url: "#",
-    note: "Yerel rehber PDF, 317 sayfalık çalışma notu",
-  },
-];
 
 const navItems: { id: ViewId; label: string; icon: string }[] = [
-  { id: "today", label: "Bugün", icon: "G" },
   { id: "lessons", label: "Dersler", icon: "D" },
   { id: "practice", label: "Soru Çöz", icon: "S" },
   { id: "exam", label: "Deneme", icon: "T" },
   { id: "progress", label: "İlerleme", icon: "I" },
 ];
+
+const viewCopy: Record<ViewId, { eyebrow: string; title: string; subtitle: string }> = {
+  lessons: {
+    eyebrow: "Resmi Konu Dağılımı",
+    title: "Dersler",
+    subtitle: "Ana kaynak MASAK_Rehber_12-01-2026.pdf temel alınarak önceliklendirilmiş çalışma notları.",
+  },
+  practice: {
+    eyebrow: "Açıklamalı Soru Çözümü",
+    title: "Soru Çöz",
+    subtitle: "Anında geri bildirim, çeldirici notu ve kaynak atfıyla çalış.",
+  },
+  exam: {
+    eyebrow: "Süreli Simülasyon",
+    title: "Deneme",
+    subtitle: "50 soru, 45 dakika, boş/işaretli soru takibi ve resmi başarı kriteri.",
+  },
+  progress: {
+    eyebrow: "Performans",
+    title: "İlerleme",
+    subtitle: "Ders tamamlama, pratik doğruluk ve deneme geçmişini izle.",
+  },
+};
+
+const defaultProgress: ProgressState = {
+  version: 2,
+  completedLessons: [],
+  answered: {},
+  weakTags: {},
+  lastSession: "Henüz oturum yok",
+  examHistory: [],
+  lastLegislationCheck: examRules.legislationCheckedAt,
+};
 
 function loadProgress(): ProgressState {
   if (typeof window === "undefined") {
@@ -314,20 +100,92 @@ function loadProgress(): ProgressState {
   }
 
   try {
-    const raw = window.localStorage.getItem("masak-prep-progress-v1");
-    return raw ? { ...defaultProgress, ...JSON.parse(raw) } : defaultProgress;
+    const v2Raw = window.localStorage.getItem("masak-prep-progress-v2");
+    if (v2Raw) {
+      return { ...defaultProgress, ...JSON.parse(v2Raw), version: 2 };
+    }
+
+    const v1Raw = window.localStorage.getItem("masak-prep-progress-v1");
+    if (v1Raw) {
+      const v1 = JSON.parse(v1Raw);
+      return {
+        ...defaultProgress,
+        completedLessons: v1.completedLessons ?? [],
+        answered: v1.answered ?? {},
+        weakTags: v1.weakTags ?? {},
+        lastSession: v1.lastSession ?? defaultProgress.lastSession,
+      };
+    }
   } catch {
     return defaultProgress;
   }
+
+  return defaultProgress;
+}
+
+function formatTime(totalSeconds: number) {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+function pickExamQuestions(mode: ExamMode) {
+  const pool = mode === "mixed" ? questions : getQuestionsForModule(mode);
+  const selected = [...pool].sort((a, b) => a.id.localeCompare(b.id)).slice(0, examRules.questionCount);
+  return selected.length >= examRules.questionCount ? selected : pool;
+}
+
+function scoreExam(session: ExamSession): ExamResult {
+  const topicBreakdown: ExamResult["topicBreakdown"] = {};
+  let correct = 0;
+  let wrong = 0;
+  let blank = 0;
+
+  session.questions.forEach((question) => {
+    const selected = session.answers[question.id];
+    const isBlank = selected === undefined;
+    const isCorrect = selected === question.answer;
+    const current = topicBreakdown[question.topicId] ?? { total: 0, correct: 0, wrong: 0, blank: 0 };
+
+    current.total += 1;
+    if (isBlank) {
+      blank += 1;
+      current.blank += 1;
+    } else if (isCorrect) {
+      correct += 1;
+      current.correct += 1;
+    } else {
+      wrong += 1;
+      current.wrong += 1;
+    }
+    topicBreakdown[question.topicId] = current;
+  });
+
+  const score = Math.round((correct / session.questions.length) * 100);
+  return {
+    id: `${session.mode}-${session.startedAt}`,
+    mode: session.mode,
+    title: session.title,
+    total: session.questions.length,
+    correct,
+    wrong,
+    blank,
+    score,
+    durationSeconds: examRules.durationMinutes * 60 - session.remainingSeconds,
+    finishedAt: new Date().toLocaleString("tr-TR"),
+    topicBreakdown,
+  };
 }
 
 export default function MasakPrepApp() {
-  const [activeView, setActiveView] = useState<ViewId>("today");
-  const [activeModule, setActiveModule] = useState("mod1");
+  const [activeView, setActiveView] = useState<ViewId>("lessons");
+  const [activeModule, setActiveModule] = useState<ModuleId>("mod1");
   const [activeLesson, setActiveLesson] = useState(lessons[0].id);
   const [activeQuestion, setActiveQuestion] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [progress, setProgress] = useState<ProgressState>(defaultProgress);
+  const [examSession, setExamSession] = useState<ExamSession | null>(null);
+  const [lastResult, setLastResult] = useState<ExamResult | null>(null);
 
   useEffect(() => {
     setProgress(loadProgress());
@@ -337,16 +195,41 @@ export default function MasakPrepApp() {
   }, []);
 
   useEffect(() => {
-    window.localStorage.setItem("masak-prep-progress-v1", JSON.stringify(progress));
+    window.localStorage.setItem("masak-prep-progress-v2", JSON.stringify(progress));
   }, [progress]);
 
-  const currentLesson = lessons.find((lesson) => lesson.id === activeLesson) ?? lessons[0];
+  useEffect(() => {
+    if (!examSession || examSession.status !== "running") {
+      return;
+    }
+
+    if (examSession.remainingSeconds <= 0) {
+      finishExam();
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      setExamSession((current) =>
+        current && current.status === "running"
+          ? { ...current, remainingSeconds: Math.max(0, current.remainingSeconds - 1) }
+          : current,
+      );
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [examSession?.status, examSession?.remainingSeconds]);
+
+  const currentLesson = getLessonById(activeLesson);
+  const currentContent = lessonContentById[currentLesson.id];
   const filteredLessons = lessons.filter((lesson) => lesson.moduleId === activeModule);
   const currentQuestion = questions[activeQuestion];
   const answeredCount = Object.keys(progress.answered).length;
   const correctCount = Object.values(progress.answered).filter(Boolean).length;
   const accuracy = answeredCount ? Math.round((correctCount / answeredCount) * 100) : 0;
   const completedRatio = Math.round((progress.completedLessons.length / lessons.length) * 100);
+  const mod1Last = progress.examHistory.find((result) => result.mode === "mod1");
+  const mod2Last = progress.examHistory.find((result) => result.mode === "mod2");
+  const averageScore = mod1Last && mod2Last ? Math.round((mod1Last.score + mod2Last.score) / 2) : null;
 
   const moduleScores = useMemo(() => {
     return modules.map((module) => {
@@ -356,9 +239,15 @@ export default function MasakPrepApp() {
       return {
         ...module,
         score: answered.length ? Math.round((correct.length / answered.length) * 100) : 0,
+        questionCount: moduleQuestions.length,
       };
     });
   }, [progress.answered]);
+
+  const weakLessons = Object.entries(progress.weakTags)
+    .sort((a, b) => b[1] - a[1])
+    .map(([lessonId]) => getLessonById(lessonId).title);
+  const activeCopy = viewCopy[activeView];
 
   function completeLesson() {
     setProgress((current) => {
@@ -388,9 +277,9 @@ export default function MasakPrepApp() {
         ? current.weakTags
         : {
             ...current.weakTags,
-            [currentQuestion.lessonId]: (current.weakTags[currentQuestion.lessonId] ?? 0) + 1,
+            [currentQuestion.topicId]: (current.weakTags[currentQuestion.topicId] ?? 0) + 1,
           },
-      lastSession: `${currentQuestion.source}: ${isCorrect ? "doğru" : "tekrar gerekli"}`,
+      lastSession: `${currentQuestion.sourceRef}: ${isCorrect ? "doğru" : "tekrar gerekli"}`,
     }));
   }
 
@@ -399,24 +288,220 @@ export default function MasakPrepApp() {
     setActiveQuestion((current) => (current + 1) % questions.length);
   }
 
-  function startExam(moduleId: string | "mixed") {
-    const firstIndex = questions.findIndex((question) =>
-      moduleId === "mixed" ? true : question.moduleId === moduleId,
-    );
-    setActiveQuestion(firstIndex >= 0 ? firstIndex : 0);
-    setSelectedAnswer(null);
-    setActiveView("practice");
-    setProgress((current) => ({
-      ...current,
-      lastSession:
-        moduleId === "mixed" ? "Karışık deneme başlatıldı" : `${moduleId === "mod1" ? "Modül 1" : "Modül 2"} denemesi başlatıldı`,
-    }));
+  function startExam(mode: ExamMode) {
+    const title =
+      mode === "mixed" ? "Karışık Çalışma Denemesi" : `${getModuleById(mode).shortName} Resmi Simülasyon`;
+    const examQuestions = pickExamQuestions(mode);
+    setExamSession({
+      mode,
+      title,
+      questions: examQuestions,
+      currentIndex: 0,
+      answers: {},
+      marked: [],
+      remainingSeconds: examRules.durationMinutes * 60,
+      status: "running",
+      startedAt: Date.now(),
+    });
+    setLastResult(null);
+    setActiveView("exam");
+    setProgress((current) => ({ ...current, lastSession: `${title} başlatıldı` }));
   }
 
-  const weakLessons = Object.entries(progress.weakTags)
-    .sort((a, b) => b[1] - a[1])
-    .map(([lessonId]) => lessons.find((lesson) => lesson.id === lessonId)?.title)
-    .filter(Boolean) as string[];
+  function setExamAnswer(questionId: string, answer: number) {
+    setExamSession((current) =>
+      current ? { ...current, answers: { ...current.answers, [questionId]: answer } } : current,
+    );
+  }
+
+  function toggleMarked(questionId: string) {
+    setExamSession((current) => {
+      if (!current) {
+        return current;
+      }
+      return {
+        ...current,
+        marked: current.marked.includes(questionId)
+          ? current.marked.filter((id) => id !== questionId)
+          : [...current.marked, questionId],
+      };
+    });
+  }
+
+  function finishExam() {
+    setExamSession((current) => {
+      if (!current) {
+        return current;
+      }
+
+      const result = scoreExam({ ...current, status: "finished" });
+      setLastResult(result);
+      setProgress((progressState) => ({
+        ...progressState,
+        examHistory: [result, ...progressState.examHistory.filter((item) => item.id !== result.id)].slice(0, 8),
+        lastSession: `${result.title}: ${result.score} puan`,
+        weakTags: Object.entries(result.topicBreakdown).reduce(
+          (acc, [topicId, value]) => ({
+            ...acc,
+            [topicId]: (acc[topicId] ?? 0) + value.wrong + value.blank,
+          }),
+          { ...progressState.weakTags },
+        ),
+      }));
+      return { ...current, status: "finished" };
+    });
+  }
+
+  function renderExamRunner() {
+    if (!examSession) {
+      return (
+        <section className="exam-grid">
+          {[
+            ["Modül 1 Deneme", "50 soru, 45 dakika. SPL dağılımına uygun resmi simülasyon.", "mod1"],
+            ["Modül 2 Deneme", "50 soru, 45 dakika. Uyum yönetimi ve yükümlülükler ağırlıklı.", "mod2"],
+            ["Karışık Çalışma", "İki modülden hızlı tekrar; resmi simülasyon olarak işaretlenmez.", "mixed"],
+          ].map(([title, text, id]) => (
+            <article className="panel panel-inner exam-card" key={title}>
+              <div>
+                <p className="eyebrow">{id === "mixed" ? "Çalışma modu" : "Resmi simülasyon"}</p>
+                <h2 className="section-title">{title}</h2>
+                <p>{text}</p>
+              </div>
+              <button className="button primary" onClick={() => startExam(id as ExamMode)} type="button">
+                Denemeyi Başlat
+              </button>
+            </article>
+          ))}
+        </section>
+      );
+    }
+
+    if (lastResult) {
+      const modulePass = lastResult.score >= examRules.passPerModule;
+      const averagePass =
+        averageScore === null
+          ? "İki modül çözülünce ortalama hesaplanır."
+          : averageScore >= examRules.averagePass
+            ? `Ortalama ${averageScore}: başarılı.`
+            : `Ortalama ${averageScore}: tekrar gerekli.`;
+
+      return (
+        <section className="progress-grid">
+          <div className="panel panel-inner">
+            <p className="eyebrow">Deneme Sonucu</p>
+            <h2 className="page-title">{lastResult.title}</h2>
+            <div className="metric-grid">
+              <div className="metric"><p className="metric-value">{lastResult.score}</p><p className="metric-label">Puan</p></div>
+              <div className="metric"><p className="metric-value">{lastResult.correct}</p><p className="metric-label">Doğru</p></div>
+              <div className="metric"><p className="metric-value">{lastResult.blank}</p><p className="metric-label">Boş</p></div>
+            </div>
+            <div className={`callout ${modulePass ? "" : "warning"}`}>
+              <p className="callout-title">Resmi başarı kriteri simülasyonu</p>
+              <p>
+                Modül puanı {lastResult.score}. Modül eşiği {examRules.passPerModule}; iki modül ortalaması eşiği {examRules.averagePass}. {averagePass}
+              </p>
+            </div>
+            <div className="bar-list">
+              {Object.entries(lastResult.topicBreakdown).map(([topicId, value]) => {
+                const lesson = getLessonById(topicId);
+                const ratio = Math.round((value.correct / value.total) * 100);
+                return (
+                  <div className="bar-row" key={topicId}>
+                    <div className="bar-label"><span>{lesson.title}</span><span>{ratio}%</span></div>
+                    <div className="bar-track"><div className="bar-fill" style={{ width: `${ratio}%` }} /></div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <aside className="panel panel-inner">
+            <h2 className="section-title">Sonraki Adım</h2>
+            <p className="section-subtitle">Yanlış ve boş konular tekrar listesine eklendi.</p>
+            <div className="top-actions">
+              <button className="button primary" onClick={() => startExam(lastResult.mode)} type="button">Tekrar Çöz</button>
+              <button className="button" onClick={() => setExamSession(null)} type="button">Deneme Menüsü</button>
+            </div>
+          </aside>
+        </section>
+      );
+    }
+
+    const question = examSession.questions[examSession.currentIndex];
+    const answered = Object.keys(examSession.answers).length;
+    const blank = examSession.questions.length - answered;
+
+    return (
+      <section className="practice-grid">
+        <div className="panel panel-inner question-card">
+          <div className="exam-toolbar">
+            <span className="tag blue">{examSession.title}</span>
+            <span className="tag">Kalan süre: {formatTime(examSession.remainingSeconds)}</span>
+            <span className="tag">Cevaplanan: {answered}</span>
+            <span className="tag">Boş: {blank}</span>
+          </div>
+          <div className="question-meta">
+            <span className="tag">{getModuleById(question.moduleId).shortName}</span>
+            <span className="tag blue">{question.difficulty}</span>
+            <span className="tag">{getLessonById(question.topicId).title}</span>
+          </div>
+          <p className="question-text">{examSession.currentIndex + 1}. {question.prompt}</p>
+          <div className="options">
+            {question.options.map((option, index) => (
+              <button
+                className={`option ${examSession.answers[question.id] === index ? "selected" : ""}`}
+                key={option}
+                onClick={() => setExamAnswer(question.id, index)}
+                type="button"
+              >
+                <span className="option-letter">{String.fromCharCode(65 + index)}</span>
+                <span>{option}</span>
+              </button>
+            ))}
+          </div>
+          <div className="top-actions">
+            <button
+              className="button"
+              disabled={examSession.currentIndex === 0}
+              onClick={() => setExamSession((current) => current ? { ...current, currentIndex: current.currentIndex - 1 } : current)}
+              type="button"
+            >
+              Önceki
+            </button>
+            <button
+              className="button"
+              disabled={examSession.currentIndex === examSession.questions.length - 1}
+              onClick={() => setExamSession((current) => current ? { ...current, currentIndex: current.currentIndex + 1 } : current)}
+              type="button"
+            >
+              Sonraki
+            </button>
+            <button className="button" onClick={() => toggleMarked(question.id)} type="button">
+              {examSession.marked.includes(question.id) ? "İşareti Kaldır" : "İşaretle"}
+            </button>
+            <button className="button primary" onClick={finishExam} type="button">
+              Sınavı Bitir
+            </button>
+          </div>
+        </div>
+        <aside className="panel panel-inner">
+          <h2 className="section-title">Soru Paleti</h2>
+          <p className="section-subtitle">İşaretli sorular koyu çerçeveyle görünür.</p>
+          <div className="question-palette">
+            {examSession.questions.map((item, index) => (
+              <button
+                className={`${examSession.currentIndex === index ? "active" : ""} ${examSession.answers[item.id] !== undefined ? "answered" : ""} ${examSession.marked.includes(item.id) ? "marked" : ""}`}
+                key={item.id}
+                onClick={() => setExamSession((current) => current ? { ...current, currentIndex: index } : current)}
+                type="button"
+              >
+                {index + 1}
+              </button>
+            ))}
+          </div>
+        </aside>
+      </section>
+    );
+  }
 
   return (
     <div className="app-shell">
@@ -424,130 +509,31 @@ export default function MasakPrepApp() {
         <div className="brand">
           <div className="brand-mark">M</div>
           <div>
-            <p className="brand-title">MASAK Hazırlık</p>
-            <p className="brand-subtitle">Uyum görevlisi sınav prototipi</p>
+            <p className="brand-title">MASAK Hazırlık v2</p>
+            <p className="brand-subtitle">Güncel mevzuat ve SPL simülasyonu</p>
           </div>
         </div>
         <nav className="nav">
           {navItems.map((item) => (
-            <button
-              className={`nav-button ${activeView === item.id ? "active" : ""}`}
-              key={item.id}
-              onClick={() => setActiveView(item.id)}
-              type="button"
-            >
+            <button className={`nav-button ${activeView === item.id ? "active" : ""}`} key={item.id} onClick={() => setActiveView(item.id)} type="button">
               <span className="nav-icon" aria-hidden="true">{item.icon}</span>
               {item.label}
             </button>
           ))}
         </nav>
         <div className="sidebar-note">
-          Eğitim amaçlı prototiptir. Resmi sınav sorusu değildir; mevzuat ve duyuru güncelliği ayrıca kontrol edilmelidir.
+          Mevzuat son kontrol: {examRules.legislationCheckedAt}. Eğitim amaçlıdır; resmi sınav sorusu değildir.
         </div>
       </aside>
 
       <main className="main">
         <header className="topbar">
           <div>
-            <p className="eyebrow">MASAK Uyum Görevlisi Yetkilendirme</p>
-            <h1 className="page-title">Ders anlatımı ve açıklamalı soru çözüm kokpiti</h1>
-          </div>
-          <div className="top-actions">
-            <button className="button" onClick={() => setActiveView("lessons")} type="button">
-              Dersi Aç
-            </button>
-            <button className="button primary" onClick={() => setActiveView("practice")} type="button">
-              Soru Çöz
-            </button>
+            <p className="eyebrow">{activeCopy.eyebrow}</p>
+            <h1 className="page-title screen-title">{activeCopy.title}</h1>
+            <p className="screen-subtitle">{activeCopy.subtitle}</p>
           </div>
         </header>
-
-        {activeView === "today" && (
-          <section className="dashboard">
-            <div className="panel hero-panel">
-              <div className="hero-copy">
-                <p className="eyebrow">Bugünkü Plan</p>
-                <h2 className="page-title">40 dakikalık net çalışma akışı</h2>
-                <p>
-                  Önce bir ders özeti oku, karıştırılan noktayı işaretle, ardından açıklamalı mini test çöz. Yanlışların ilerleme panelinde tekrar gündemine düşer.
-                </p>
-                <div className="top-actions">
-                  <button className="button primary" onClick={() => setActiveView("lessons")} type="button">
-                    Kaldığım Derse Git
-                  </button>
-                  <button className="button" onClick={() => startExam("mixed")} type="button">
-                    Karışık Deneme
-                  </button>
-                </div>
-              </div>
-              <div className="study-visual" aria-label="Çalışma akışı">
-                {[
-                  ["1", "Ders", currentLesson.title],
-                  ["2", "Kart", "Sınavda sorulur alanını tekrar et"],
-                  ["3", "Test", `${questions.length} prototip sorudan devam et`],
-                ].map(([icon, title, text]) => (
-                  <div className="visual-row" key={title}>
-                    <span className="visual-icon">{icon}</span>
-                    <div>
-                      <p className="visual-title">{title}</p>
-                      <p className="visual-text">{text}</p>
-                    </div>
-                    <span className="status-pill">Hazır</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="dashboard">
-              <div className="panel panel-inner">
-                <div className="metric-grid">
-                  <div className="metric">
-                    <p className="metric-value">{completedRatio}%</p>
-                    <p className="metric-label">Ders ilerlemesi</p>
-                  </div>
-                  <div className="metric">
-                    <p className="metric-value">{accuracy}%</p>
-                    <p className="metric-label">Doğruluk</p>
-                  </div>
-                  <div className="metric">
-                    <p className="metric-value">{answeredCount}</p>
-                    <p className="metric-label">Çözülen soru</p>
-                  </div>
-                </div>
-              </div>
-              <div className="panel panel-inner">
-                <div className="section-head">
-                  <div>
-                    <h2 className="section-title">Zayıf Konular</h2>
-                    <p className="section-subtitle">Yanlış cevaplara göre oluşur.</p>
-                  </div>
-                </div>
-                <div className="weak-list">
-                  {(weakLessons.length ? weakLessons : ["ŞİB gizliliği", "FATF tavsiyeleri", "KYC kapsamı"]).map((item) => (
-                    <span className="tag" key={item}>{item}</span>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="panel panel-inner">
-              <div className="section-head">
-                <div>
-                  <h2 className="section-title">Kaynaklar ve İçerik Notu</h2>
-                  <p className="section-subtitle">Özgün özet ve atıf yaklaşımıyla hazırlandı.</p>
-                </div>
-              </div>
-              <div className="source-list">
-                {sources.map((source) => (
-                  <a className="source-link" href={source.url} key={source.title} rel="noreferrer" target={source.url === "#" ? undefined : "_blank"}>
-                    {source.title}
-                    <span>{source.note}</span>
-                  </a>
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
 
         {activeView === "lessons" && (
           <section className="lesson-grid">
@@ -555,8 +541,9 @@ export default function MasakPrepApp() {
               <div className="section-head">
                 <div>
                   <h2 className="section-title">Modüller</h2>
-                  <p className="section-subtitle">Konu başlığı seç.</p>
+                  <p className="section-subtitle">Ana kaynak: MASAK_Rehber_12-01-2026.pdf</p>
                 </div>
+                <span className="status-pill">{completedRatio}%</span>
               </div>
               <div className="module-list">
                 {modules.map((module) => (
@@ -570,23 +557,17 @@ export default function MasakPrepApp() {
                     type="button"
                   >
                     <strong>{module.name}</strong>
-                    <span className="module-meta">{module.focus}</span>
+                    <span className="module-meta">
+                      {lessons.filter((lesson) => lesson.moduleId === module.id).reduce((sum, lesson) => sum + lesson.officialQuestionCount, 0)} resmi soru ağırlığı
+                    </span>
                   </button>
                 ))}
               </div>
-              <hr style={{ border: 0, borderTop: "1px solid var(--line)", margin: "1rem 0" }} />
               <div className="lesson-list">
                 {filteredLessons.map((lesson) => (
-                  <button
-                    className={`lesson-button ${activeLesson === lesson.id ? "active" : ""}`}
-                    key={lesson.id}
-                    onClick={() => setActiveLesson(lesson.id)}
-                    type="button"
-                  >
-                    <strong>{lesson.title}</strong>
-                    <span className="lesson-meta">
-                      {progress.completedLessons.includes(lesson.id) ? "Tamamlandı" : "Okunacak"}
-                    </span>
+                  <button className={`lesson-button ${activeLesson === lesson.id ? "active" : ""}`} key={lesson.id} onClick={() => setActiveLesson(lesson.id)} type="button">
+                    <strong>{lesson.order}. {lesson.title}</strong>
+                    <span className="lesson-meta">Resmi ağırlık: {lesson.officialQuestionCount} soru</span>
                   </button>
                 ))}
               </div>
@@ -594,34 +575,58 @@ export default function MasakPrepApp() {
 
             <article className="panel panel-inner lesson-body">
               <div>
-                <p className="eyebrow">{modules.find((module) => module.id === currentLesson.moduleId)?.shortName}</p>
+                <p className="eyebrow">{getModuleById(currentLesson.moduleId).shortName}</p>
                 <h2 className="section-title">{currentLesson.title}</h2>
                 <p className="lesson-lead">{currentLesson.summary}</p>
               </div>
-              <div className="callout">
-                <p className="callout-title">Sınavda Sorulur</p>
-                <p>{currentLesson.examPoint}</p>
+              <div className="lesson-stat-strip">
+                <div><strong>{currentLesson.officialQuestionCount}</strong><span>Resmi ağırlık</span></div>
+                <div><strong>{currentContent.priority === "high" ? "Yüksek" : currentContent.priority === "medium" ? "Orta" : "Kısa"}</strong><span>Öncelik</span></div>
+                <div><strong>{progress.completedLessons.includes(currentLesson.id) ? "Tamam" : "Açık"}</strong><span>Ders durumu</span></div>
               </div>
-              <div className="callout warning">
-                <p className="callout-title">Karıştırılan Nokta</p>
-                <p>{currentLesson.confusion}</p>
+              <div className="callout focus-callout"><p className="callout-title">Sınavda Çıkar</p><p>{currentContent.examFocus}</p></div>
+              <section className="narrative-block">
+                <h3>Ana Anlatım</h3>
+                <p>{currentContent.coreNarrative}</p>
+                <span>{currentContent.pdfRange}</span>
+              </section>
+              <div className="lesson-detail-grid priority-grid">
+                <section className="detail-block">
+                  <h3>Mutlaka Bil</h3>
+                  <ul>{currentContent.mustKnow.map((item) => <li key={item}>{item}</li>)}</ul>
+                </section>
+                <section className="detail-block">
+                  <h3>Kritik Ayrımlar</h3>
+                  <ul>{currentContent.confusions.map((item) => <li key={item}>{item}</li>)}</ul>
+                </section>
               </div>
-              <dl className="card-grid">
-                {currentLesson.keyCards.map((card) => (
-                  <div className="study-card" key={card.term}>
-                    <dt>{card.term}</dt>
-                    <dd>{card.detail}</dd>
-                  </div>
-                ))}
-              </dl>
+              <div className="callout scenario"><p className="callout-title">Örnek Olay</p><p>{currentContent.casePattern}</p></div>
+              <section className="review-section">
+                <h3>Hızlı Tekrar</h3>
+                <dl className="card-grid">
+                  {currentContent.reviewCards.map((card) => (
+                    <div className="study-card" key={card.term}><dt>{card.term}</dt><dd>{card.detail}</dd></div>
+                  ))}
+                </dl>
+              </section>
+              <details className="inline-source-panel">
+                <summary>Mevzuat dayanakları</summary>
+                <div className="source-note-list">
+                  {currentContent.legalAnchors.map((item) => <span key={item}>{item}</span>)}
+                </div>
+              </details>
+              <section className="mini-quiz-box">
+                <div>
+                  <h3>Mini Test Hazırlığı</h3>
+                  <p>{currentContent.miniQuizSeed.join(" ")}</p>
+                </div>
+              </section>
               <div className="top-actions">
-                <button className="button primary" onClick={completeLesson} type="button">
-                  Dersi Tamamla
-                </button>
+                <button className="button primary" onClick={completeLesson} type="button">Dersi Tamamla</button>
                 <button
                   className="button"
                   onClick={() => {
-                    const index = questions.findIndex((question) => question.lessonId === currentLesson.id);
+                    const index = questions.findIndex((question) => question.topicId === currentLesson.id);
                     setActiveQuestion(index >= 0 ? index : 0);
                     setSelectedAnswer(null);
                     setActiveView("practice");
@@ -639,31 +644,18 @@ export default function MasakPrepApp() {
           <section className="practice-grid">
             <div className="panel panel-inner question-card">
               <div className="question-meta">
-                <span className="tag">{modules.find((module) => module.id === currentQuestion.moduleId)?.shortName}</span>
+                <span className="tag">{getModuleById(currentQuestion.moduleId).shortName}</span>
                 <span className="tag blue">{currentQuestion.difficulty}</span>
-                <span className="tag">{currentQuestion.source}</span>
+                <span className="tag">{getLessonById(currentQuestion.topicId).title}</span>
               </div>
               <p className="question-text">{currentQuestion.prompt}</p>
               <div className="options">
                 {currentQuestion.options.map((option, index) => {
                   const isCorrect = index === currentQuestion.answer;
                   const isSelected = selectedAnswer === index;
-                  const stateClass =
-                    selectedAnswer === null
-                      ? ""
-                      : isCorrect
-                        ? "correct"
-                        : isSelected
-                          ? "wrong"
-                          : "";
+                  const stateClass = selectedAnswer === null ? "" : isCorrect ? "correct" : isSelected ? "wrong" : "";
                   return (
-                    <button
-                      className={`option ${isSelected ? "selected" : ""} ${stateClass}`}
-                      disabled={selectedAnswer !== null}
-                      key={option}
-                      onClick={() => answerQuestion(index)}
-                      type="button"
-                    >
+                    <button className={`option ${isSelected ? "selected" : ""} ${stateClass}`} disabled={selectedAnswer !== null} key={option} onClick={() => answerQuestion(index)} type="button">
                       <span className="option-letter">{String.fromCharCode(65 + index)}</span>
                       <span>{option}</span>
                     </button>
@@ -672,85 +664,47 @@ export default function MasakPrepApp() {
               </div>
               {selectedAnswer !== null && (
                 <div className="solution">
-                  <strong>
-                    {selectedAnswer === currentQuestion.answer ? "Doğru cevap." : "Yanlış cevap."} Doğru seçenek {String.fromCharCode(65 + currentQuestion.answer)}.
-                  </strong>
+                  <strong>{selectedAnswer === currentQuestion.answer ? "Doğru cevap." : "Yanlış cevap."} Doğru seçenek {String.fromCharCode(65 + currentQuestion.answer)}.</strong>
                   <p>{currentQuestion.explanation}</p>
-                  <p><strong>Karıştırma:</strong> {currentQuestion.confusion}</p>
+                  <p><strong>Çeldirici:</strong> {currentQuestion.trapNote}</p>
+                  <p><strong>Kaynak:</strong> {currentQuestion.sourceRef}</p>
                 </div>
               )}
               <div className="top-actions">
-                <button className="button" onClick={nextQuestion} type="button">
-                  Sonraki Soru
-                </button>
-                <button className="button ghost" onClick={() => setSelectedAnswer(null)} type="button">
-                  Cevabı Temizle
-                </button>
+                <button className="button" onClick={nextQuestion} type="button">Sonraki Soru</button>
+                <button className="button ghost" onClick={() => setSelectedAnswer(null)} type="button">Cevabı Temizle</button>
               </div>
             </div>
-
             <aside className="panel panel-inner">
-              <h2 className="section-title">Soru Çözüm Özeti</h2>
-              <p className="section-subtitle">Cihazda saklanan oturum verisi.</p>
+              <h2 className="section-title">Soru Bankası</h2>
               <div className="metric-grid" style={{ gridTemplateColumns: "1fr" }}>
-                <div className="metric">
-                  <p className="metric-value">{answeredCount}</p>
-                  <p className="metric-label">Çözülen soru</p>
-                </div>
-                <div className="metric">
-                  <p className="metric-value">{accuracy}%</p>
-                  <p className="metric-label">Doğruluk oranı</p>
-                </div>
+                <div className="metric"><p className="metric-value">{questions.length}</p><p className="metric-label">Toplam özgün soru</p></div>
+                <div className="metric"><p className="metric-value">{answeredCount}</p><p className="metric-label">Çözülen pratik soru</p></div>
               </div>
             </aside>
           </section>
         )}
 
-        {activeView === "exam" && (
-          <section className="exam-grid">
-            {[
-              ["Modül 1 Deneme", "Kurumsal yapı, FATF, MİB, aklama, TF ve yaptırım başlıklarından kısa prototip deneme.", "mod1"],
-              ["Modül 2 Deneme", "Yükümlüler, uyum programı, KYC, ŞİB, erteleme ve transfer yükümlülükleri.", "mod2"],
-              ["Karışık Deneme", "Gerçek sınav ritmine yaklaşmak için iki modülden harmanlanmış kısa soru seti.", "mixed"],
-            ].map(([title, text, id]) => (
-              <article className="panel panel-inner exam-card" key={title}>
-                <div>
-                  <p className="eyebrow">50 soruluk yapıya hazır</p>
-                  <h2 className="section-title">{title}</h2>
-                  <p>{text}</p>
-                </div>
-                <button className="button primary" onClick={() => startExam(id as "mod1" | "mod2" | "mixed")} type="button">
-                  Denemeyi Başlat
-                </button>
-              </article>
-            ))}
-          </section>
-        )}
+        {activeView === "exam" && renderExamRunner()}
 
         {activeView === "progress" && (
           <section className="progress-grid">
             <div className="panel panel-inner">
-              <div className="section-head">
-                <div>
-                  <h2 className="section-title">Modül Bazlı İlerleme</h2>
-                  <p className="section-subtitle">Ders tamamlama ve soru doğruluğu birlikte izlenir.</p>
-                </div>
-              </div>
+              <h2 className="section-title">İlerleme ve Deneme Geçmişi</h2>
               <div className="bar-list">
-                <div className="bar-row">
-                  <div className="bar-label">
-                    <span>Ders tamamlama</span>
-                    <span>{completedRatio}%</span>
-                  </div>
-                  <div className="bar-track"><div className="bar-fill" style={{ width: `${completedRatio}%` }} /></div>
-                </div>
+                <div className="bar-row"><div className="bar-label"><span>Ders tamamlama</span><span>{completedRatio}%</span></div><div className="bar-track"><div className="bar-fill" style={{ width: `${completedRatio}%` }} /></div></div>
                 {moduleScores.map((module) => (
                   <div className="bar-row" key={module.id}>
-                    <div className="bar-label">
-                      <span>{module.shortName} doğruluk</span>
-                      <span>{module.score}%</span>
-                    </div>
+                    <div className="bar-label"><span>{module.shortName} pratik doğruluk ({module.questionCount} soru)</span><span>{module.score}%</span></div>
                     <div className="bar-track"><div className="bar-fill" style={{ width: `${module.score}%` }} /></div>
+                  </div>
+                ))}
+              </div>
+              <div className="source-list" style={{ marginTop: "1rem" }}>
+                {progress.examHistory.map((result) => (
+                  <div className="source-link" key={result.id}>
+                    {result.title}: {result.score} puan
+                    <span>{result.finishedAt} | D:{result.correct} Y:{result.wrong} B:{result.blank}</span>
                   </div>
                 ))}
               </div>
@@ -758,8 +712,9 @@ export default function MasakPrepApp() {
             <aside className="panel panel-inner">
               <h2 className="section-title">Tekrar Önerisi</h2>
               <p className="section-subtitle">Son oturum: {progress.lastSession}</p>
+              <p className="section-subtitle">Mevzuat son kontrol: {progress.lastLegislationCheck}</p>
               <div className="weak-list" style={{ marginTop: "1rem" }}>
-                {(weakLessons.length ? weakLessons : ["MASAK görev sınırı", "Müşterinin tanınması", "İşlem erteleme"]).map((item) => (
+                {(weakLessons.length ? weakLessons.slice(0, 8) : ["ŞİB", "Müşterinin Tanınması", "Uyum Yönetimi"]).map((item) => (
                   <span className="tag" key={item}>{item}</span>
                 ))}
               </div>
@@ -770,12 +725,7 @@ export default function MasakPrepApp() {
 
       <nav className="mobile-nav" aria-label="Mobil gezinme">
         {navItems.map((item) => (
-          <button
-            className={activeView === item.id ? "active" : ""}
-            key={item.id}
-            onClick={() => setActiveView(item.id)}
-            type="button"
-          >
+          <button className={activeView === item.id ? "active" : ""} key={item.id} onClick={() => setActiveView(item.id)} type="button">
             {item.label}
           </button>
         ))}

@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f4f7f6;
+  --background: #f6f8f7;
   --foreground: #18231f;
   --muted: #66756f;
   --line: #dfe7e3;
@@ -15,7 +15,7 @@
   --danger: #b42318;
   --success: #18794e;
   --blue: #3157a4;
-  --shadow: 0 18px 45px rgba(27, 44, 39, 0.1);
+  --shadow: 0 10px 26px rgba(27, 44, 39, 0.07);
 }
 
 @theme inline {
@@ -36,12 +36,9 @@ html {
 body {
   min-width: 320px;
   margin: 0;
-  background:
-    linear-gradient(135deg, rgba(15, 118, 110, 0.08), transparent 28rem),
-    linear-gradient(225deg, rgba(49, 87, 164, 0.1), transparent 26rem),
-    var(--background);
+  background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
 
 button,
@@ -60,7 +57,7 @@ a {
 
 .app-shell {
   display: grid;
-  grid-template-columns: 17rem minmax(0, 1fr);
+  grid-template-columns: 15.5rem minmax(0, 1fr);
   min-height: 100vh;
 }
 
@@ -72,9 +69,9 @@ a {
   flex-direction: column;
   gap: 1.25rem;
   border-right: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.82);
-  padding: 1.25rem;
-  backdrop-filter: blur(18px);
+  background: rgba(255, 255, 255, 0.9);
+  padding: 1rem;
+  backdrop-filter: blur(12px);
 }
 
 .brand {
@@ -117,9 +114,9 @@ a {
   align-items: center;
   gap: 0.65rem;
   width: 100%;
-  min-height: 2.85rem;
+  min-height: 2.65rem;
   border: 1px solid transparent;
-  border-radius: 0.5rem;
+  border-radius: 0.45rem;
   background: transparent;
   color: var(--ink);
   padding: 0.65rem 0.75rem;
@@ -154,7 +151,7 @@ a {
   border: 1px solid var(--line);
   border-radius: 0.5rem;
   background: #fff;
-  padding: 0.9rem;
+  padding: 0.75rem;
   color: var(--muted);
   font-size: 0.82rem;
   line-height: 1.45;
@@ -162,16 +159,18 @@ a {
 
 .main {
   min-width: 0;
-  padding: 1.25rem 1.4rem 6rem;
+  padding: 1rem 1.25rem 6rem;
 }
 
 .topbar {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
-  margin: 0 auto 1rem;
+  margin: 0 auto 0.85rem;
   max-width: 76rem;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0.85rem;
 }
 
 .eyebrow {
@@ -185,9 +184,21 @@ a {
 
 .page-title {
   margin: 0.2rem 0 0;
-  font-size: clamp(1.6rem, 3vw, 2.6rem);
-  line-height: 1.05;
+  font-size: clamp(1.45rem, 2.1vw, 2.1rem);
+  line-height: 1.12;
   letter-spacing: 0;
+}
+
+.screen-title {
+  font-size: clamp(1.7rem, 2.4vw, 2.35rem);
+}
+
+.screen-subtitle {
+  max-width: 44rem;
+  margin: 0.3rem 0 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.45;
 }
 
 .top-actions {
@@ -197,13 +208,18 @@ a {
   justify-content: flex-end;
 }
 
+.top-actions-compact {
+  flex: 0 0 auto;
+  padding-top: 0.15rem;
+}
+
 .button {
-  min-height: 2.75rem;
+  min-height: 2.45rem;
   border: 1px solid var(--line);
   border-radius: 0.5rem;
   background: #fff;
   color: var(--ink);
-  padding: 0.65rem 0.9rem;
+  padding: 0.55rem 0.85rem;
   font-weight: 750;
 }
 
@@ -223,6 +239,7 @@ a {
 }
 
 .dashboard,
+.today-grid,
 .lesson-grid,
 .practice-grid,
 .exam-grid,
@@ -237,6 +254,11 @@ a {
   grid-template-columns: minmax(0, 1.55fr) minmax(18rem, 0.85fr);
 }
 
+.today-grid {
+  grid-template-columns: minmax(0, 1.45fr) minmax(19rem, 0.75fr);
+  align-items: start;
+}
+
 .panel {
   border: 1px solid var(--line);
   border-radius: 0.5rem;
@@ -246,6 +268,113 @@ a {
 
 .panel-inner {
   padding: 1rem;
+}
+
+.focus-panel {
+  display: grid;
+  gap: 1.05rem;
+  padding: 1.15rem;
+}
+
+.focus-title {
+  max-width: 44rem;
+  margin: 0.2rem 0 0;
+  font-size: clamp(1.55rem, 2.7vw, 2.7rem);
+  line-height: 1.06;
+  letter-spacing: 0;
+}
+
+.focus-text {
+  max-width: 42rem;
+  margin: 0.55rem 0 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.compact-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.compact-metrics div {
+  border: 1px solid var(--line);
+  border-radius: 0.45rem;
+  background: #fbfcfc;
+  padding: 0.75rem;
+}
+
+.compact-metrics strong,
+.compact-metrics span {
+  display: block;
+}
+
+.compact-metrics strong {
+  color: var(--ink);
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.compact-metrics span {
+  margin-top: 0.3rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.side-stack {
+  display: grid;
+  gap: 1rem;
+}
+
+.status-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.status-list div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+  border-top: 1px solid var(--line);
+  padding-top: 0.55rem;
+}
+
+.status-list span {
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.status-list strong {
+  min-width: 0;
+  max-width: 12rem;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 0.86rem;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.source-panel {
+  grid-column: 1 / -1;
+}
+
+.source-panel summary {
+  cursor: pointer;
+  color: var(--ink);
+  font-weight: 850;
+}
+
+.source-panel .source-list {
+  margin-top: 0.8rem;
 }
 
 .hero-panel {
@@ -398,7 +527,8 @@ a {
 }
 
 .lesson-grid {
-  grid-template-columns: minmax(16rem, 0.8fr) minmax(0, 1.2fr);
+  grid-template-columns: minmax(17rem, 0.62fr) minmax(0, 1.38fr);
+  align-items: start;
 }
 
 .lesson-body {
@@ -409,6 +539,122 @@ a {
 .lesson-lead {
   color: var(--muted);
   line-height: 1.65;
+}
+
+.module-summary,
+.lesson-stat-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin: 0.85rem 0;
+}
+
+.module-summary div,
+.lesson-stat-strip div {
+  border: 1px solid var(--line);
+  border-radius: 0.45rem;
+  background: #fbfcfc;
+  padding: 0.65rem;
+}
+
+.module-summary strong,
+.module-summary span,
+.lesson-stat-strip strong,
+.lesson-stat-strip span {
+  display: block;
+}
+
+.module-summary strong,
+.lesson-stat-strip strong {
+  color: var(--ink);
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.module-summary span,
+.lesson-stat-strip span {
+  margin-top: 0.25rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 750;
+}
+
+.lesson-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.detail-block {
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: #fff;
+  padding: 0.9rem;
+}
+
+.detail-block h3 {
+  margin: 0 0 0.55rem;
+  color: var(--ink);
+  font-size: 0.92rem;
+}
+
+.detail-block ul {
+  display: grid;
+  gap: 0.42rem;
+  margin: 0;
+  padding-left: 1.05rem;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.detail-block li::marker {
+  color: var(--accent);
+}
+
+.callout.scenario {
+  border-left-color: var(--blue);
+}
+
+.callout.focus-callout {
+  border-left-color: var(--accent);
+  background: #f7fbfa;
+}
+
+.narrative-block,
+.mini-quiz-box {
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: #fff;
+  padding: 1rem;
+}
+
+.narrative-block h3,
+.mini-quiz-box h3 {
+  margin: 0 0 0.45rem;
+  font-size: 0.95rem;
+}
+
+.narrative-block p,
+.mini-quiz-box p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.narrative-block span {
+  display: inline-flex;
+  margin-top: 0.75rem;
+  border-radius: 999px;
+  background: var(--panel-soft);
+  color: var(--accent-strong);
+  padding: 0.3rem 0.55rem;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.priority-grid {
+  align-items: start;
 }
 
 .callout {
@@ -438,6 +684,16 @@ a {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.65rem;
+}
+
+.review-section {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.review-section h3 {
+  margin: 0;
+  font-size: 0.95rem;
 }
 
 .study-card {
@@ -472,6 +728,18 @@ a {
   display: flex;
   flex-wrap: wrap;
   gap: 0.45rem;
+}
+
+.exam-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  justify-content: space-between;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: var(--panel-soft);
+  padding: 0.65rem;
 }
 
 .tag {
@@ -582,6 +850,79 @@ a {
   font-weight: 500;
 }
 
+.inline-source-panel {
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: #fff;
+  padding: 0.85rem;
+}
+
+.inline-source-panel summary {
+  cursor: pointer;
+  color: var(--ink);
+  font-weight: 850;
+}
+
+.source-note-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.7rem;
+}
+
+.source-note-list span {
+  border-radius: 999px;
+  background: var(--panel-soft);
+  color: var(--accent-strong);
+  padding: 0.3rem 0.55rem;
+  font-size: 0.76rem;
+  font-weight: 750;
+}
+
+.lesson-sources {
+  position: sticky;
+  top: 1rem;
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+}
+
+.compact-source-list .source-link {
+  padding: 0.65rem;
+  font-size: 0.82rem;
+}
+
+.question-palette {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.4rem;
+  margin-top: 0.85rem;
+}
+
+.question-palette button {
+  min-height: 2.35rem;
+  border: 1px solid var(--line);
+  border-radius: 0.45rem;
+  background: #fff;
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.question-palette button.active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.question-palette button.answered {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.question-palette button.marked {
+  border-width: 2px;
+  border-color: var(--warning);
+}
+
 .exam-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -648,7 +989,7 @@ a {
   left: 0.75rem;
   z-index: 10;
   display: none;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.35rem;
   border: 1px solid var(--line);
   border-radius: 0.75rem;
@@ -691,6 +1032,7 @@ a {
   .topbar,
   .hero-panel,
   .dashboard,
+  .today-grid,
   .lesson-grid,
   .practice-grid,
   .progress-grid {
@@ -711,8 +1053,14 @@ a {
 
   .exam-grid,
   .metric-grid,
-  .card-grid {
+  .card-grid,
+  .lesson-detail-grid {
     grid-template-columns: 1fr;
+  }
+
+  .lesson-sources {
+    position: static;
+    max-height: none;
   }
 
   .mobile-nav {
@@ -729,6 +1077,19 @@ a {
   .visual-row,
   .option {
     grid-template-columns: 1.9rem minmax(0, 1fr);
+  }
+
+  .compact-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .module-summary,
+  .lesson-stat-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .top-actions-compact {
+    display: none;
   }
 
   .visual-row {
