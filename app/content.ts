@@ -37,8 +37,39 @@ export type LessonDetail = {
   sourceNotes: string[];
 };
 
+export type LessonPriority = "high" | "medium" | "short";
+
+export type DeepDiveSection = {
+  title: string;
+  body: string;
+  sourceTrace: string;
+};
+
+export type ComparisonTable = {
+  title: string;
+  columns: string[];
+  rows: string[][];
+  sourceTrace: string;
+};
+
+export type CaseStudy = {
+  title: string;
+  facts: string;
+  analysis: string;
+  takeaway: string;
+  sourceTrace: string;
+};
+
+export type MiniQuizQuestion = {
+  prompt: string;
+  options: string[];
+  answer: number;
+  explanation: string;
+  sourceTrace: string;
+};
+
 export type LessonContent = {
-  priority: "high" | "medium" | "short";
+  priority: LessonPriority;
   pdfRange: string;
   coreNarrative: string;
   examFocus: string;
@@ -48,7 +79,31 @@ export type LessonContent = {
   legalAnchors: string[];
   reviewCards: KeyCard[];
   miniQuizSeed: string[];
+  sourceTrace: string;
+  overview: string;
+  estimatedMinutes: number;
+  deepDiveSections: DeepDiveSection[];
+  examSignals: string[];
+  comparisonTables: ComparisonTable[];
+  caseStudies: CaseStudy[];
+  pitfalls: string[];
+  glossary: KeyCard[];
+  miniQuiz: MiniQuizQuestion[];
 };
+
+type BaseLessonContent = Pick<
+  LessonContent,
+  | "priority"
+  | "pdfRange"
+  | "coreNarrative"
+  | "examFocus"
+  | "mustKnow"
+  | "confusions"
+  | "casePattern"
+  | "legalAnchors"
+  | "reviewCards"
+  | "miniQuizSeed"
+>;
 
 export type Question = {
   id: string;
@@ -463,7 +518,7 @@ export const sourceLinks: SourceLink[] = [
   },
 ];
 
-export const lessonContentById: Record<string, LessonContent> = {
+const baseLessonContentById: Record<string, BaseLessonContent> = {
   "masak-gorevleri": {
     priority: "short",
     pdfRange: "MASAK_Rehber s. 1-6",
@@ -876,6 +931,204 @@ export const lessonContentById: Record<string, LessonContent> = {
     miniQuizSeed: ["Gerçek faydalanıcı ile temsilci nasıl ayrılır?", "Şüphe varsa basitleştirilmiş tedbir uygulanabilir mi?"],
   },
 };
+
+type LessonV4Blueprint = {
+  deepDiveTitles: string[];
+  tableThemes: string[];
+  caseThemes: string[];
+  glossary: KeyCard[];
+};
+
+const lessonV4Blueprints: Record<string, LessonV4Blueprint> = {
+  "masak-gorevleri": {
+    deepDiveTitles: ["MASAK'ın idari MİB konumu", "Bildirim alma ve analiz döngüsü", "Kurumlar arası bilgi paylaşımı", "Denetim elemanı ve yükümlülük denetimi", "Koordinasyon kurulu ile görev ayrımı"],
+    tableThemes: ["MASAK, savcılık ve yükümlü ayrımı"],
+    caseThemes: ["Şüpheli işlemden adli makama giden analiz zinciri"],
+    glossary: [{ term: "İdari MİB", detail: "Bildirim, analiz ve paylaşım merkezli mali istihbarat modeli." }],
+  },
+  "uluslararasi-standartlar": {
+    deepDiveTitles: ["MİB modelleri", "FATF tavsiyelerinin sınav değeri", "Karşılıklı değerlendirme ve etkililik", "Gri liste, kara liste ve takip süreçleri", "Egmont güvenli bilgi ağı", "MONEYVAL ve bölgesel yapılar"],
+    tableThemes: ["MİB modelleri karşılaştırması", "FATF, Egmont ve MONEYVAL ayrımı"],
+    caseThemes: ["Teknik uyum var ama etkililik zayıfsa ne olur?"],
+    glossary: [{ term: "Etkililik", detail: "Sistemin kağıt üzerinde değil sonuç üretme kapasitesidir." }],
+  },
+  "ulusal-koordinasyon": {
+    deepDiveTitles: ["Ulusal risk değerlendirmesi", "Sektör kırılganlığı", "Strateji belgelerinin yükümlüye etkisi", "KİSYF riskinin ayrı izlenmesi", "ŞİB rehberlerinin risk temelli güncellenmesi"],
+    tableThemes: ["Ulusal risk ve müşteri riski ayrımı"],
+    caseThemes: ["Yüksek riskli sektörün uyum programına etkisi"],
+    glossary: [{ term: "Sektör kırılganlığı", detail: "Ürün, kanal, müşteri ve ülke risklerinin sektör düzeyindeki görünümü." }],
+  },
+  aklama: {
+    deepDiveTitles: ["Aklama suçunun sınav mantığı", "Yerleştirme aşaması", "Ayrıştırma aşaması", "Bütünleştirme aşaması", "Öncül suç ve malvarlığı değeri", "Tipoloji okuma yöntemi", "Ekonomik makuliyet testi", "Elkoyma ve müsadere bağlantısı", "Önleyici yükümlülük ile suç ayrımı"],
+    tableThemes: ["Aklama aşamaları", "Aklama suçu ve yükümlülük ihlali ayrımı", "Tipoloji göstergeleri"],
+    caseThemes: ["Nakitten gayrimenkule giden çok aşamalı yapı", "Paravan şirket ve sahte fatura örüntüsü", "Kripto dönüşümüyle kaynak gizleme"],
+    glossary: [{ term: "Öncül suç", detail: "Aklamaya konu malvarlığı değerini doğuran suçtur." }],
+  },
+  "terorizmin-finansmani": {
+    deepDiveTitles: ["TF'de kaynak değil amaç belirleyicidir", "Fon kavramının genişliği", "Yasal kaynaklı fon riski", "Düşük tutarlı transfer örüntüleri", "Dernek ve bağış yapıları", "Malvarlığı dondurma", "BMGK liste mekanizması", "TF ile aklama ayrımı", "Uluslararası yaptırım bağlantısı"],
+    tableThemes: ["Aklama ve TF karşılaştırması", "Dondurma, müsadere ve elkoyma ayrımı", "TF risk göstergeleri"],
+    caseThemes: ["Küçük tutarlı bağışların riskli bölge bağlantısı", "Paravan ticari işletme üzerinden fon aktarımı", "Liste eşleşmesinde hızlı karar ihtiyacı"],
+    glossary: [{ term: "Amaç unsuru", detail: "Fonun terör eylemi, örgütü veya bağlantılı kişi için kullanılma hedefidir." }],
+  },
+  kisyf: {
+    deepDiveTitles: ["Yayılma finansmanı riski", "KİSYF'nin TF'den ayrılması", "Liste tarama disiplini", "Gerçek ve hatalı eşleşme", "Dondurma kararının uygulanması", "İstisna ve itiraz mantığı"],
+    tableThemes: ["TF ve KİSYF ayrımı", "Liste eşleşmesi karar tablosu"],
+    caseThemes: ["Benzer unvanlı tarafla yaptırım listesi eşleşmesi", "Dondurulmuş varlık üzerinde işlem talebi"],
+    glossary: [{ term: "PF", detail: "Kitle imha silahlarının yayılmasının finansmanıdır." }],
+  },
+  sib: {
+    deepDiveTitles: ["Şüphe eşiği", "Parasal eşik bulunmaması", "Dahili bildirim akışı", "Uyum görevlisinin değerlendirmesi", "MASAK Online ve ŞİBF mantığı", "Süre ve gecikmesinde sakınca", "Gizlilik ve ihbar yasağı", "Koruma hükümleri", "Ek bildirim", "İşlem ertelemesiyle ilişki"],
+    tableThemes: ["ŞİB, dahili bildirim ve işlem ertelemesi ayrımı", "Gizlilik, koruma ve ihbar yasağı", "Şüphe göstergesi değerlendirme tablosu"],
+    caseThemes: ["Profil dışı parçalı transferler", "Reddedilen işlemde ŞİB değerlendirmesi", "Müşteriye bilgi verme riskinin doğduğu an"],
+    glossary: [{ term: "İhbar yasağı", detail: "Bildirim yapıldığının veya yapılacağının ilgili kişilere açıklanmamasıdır." }],
+  },
+  "islem-ertelemesi": {
+    deepDiveTitles: ["Ertelemenin istisnai niteliği", "ŞİB ile otomatik bağ kurulmaması", "MASAK talimatı ve süre", "İmtina ve erteleme ayrımı", "Müşteriye açıklama riski", "Kayıt ve gerekçe"],
+    tableThemes: ["ŞİB, imtina ve erteleme ayrımı", "Erteleme karar adımları"],
+    caseThemes: ["Hızla çıkış yapılacak yüksek riskli transfer", "Şüpheli işlemde müşteriye açıklama baskısı"],
+    glossary: [{ term: "İmtina", detail: "Yükümlünün mevzuat gereği işlemi gerçekleştirmekten kaçınmasıdır." }],
+  },
+  "fintek-riskleri": {
+    deepDiveTitles: ["Dijital kanal risk mantığı", "Ödeme ve elektronik para kuruluşları", "Açık bankacılık ve API riski", "KVHS müşteri kabulü", "Kripto transferlerinde seyahat kuralı", "Eksik bilgi gönderen sağlayıcı", "15.000 TL teyit eşiği"],
+    tableThemes: ["Elektronik transfer ve kripto transfer ayrımı", "Dijital ürün riskleri"],
+    caseThemes: ["Eksik taraf bilgisiyle gelen kripto transferi", "API kanalında olağan dışı işlem yoğunluğu"],
+    glossary: [{ term: "Travel rule", detail: "Transfer taraf bilgilerinin transfer mesajıyla birlikte izlenmesi kuralıdır." }],
+  },
+  "uyum-yonetimi": {
+    deepDiveTitles: ["Uyum programının unsurları", "Yönetim kurulu sorumluluğu", "Uyum görevlisi ve yardımcısı", "Risk yönetimi", "İzleme ve kontrol", "İç denetim", "Eğitim ve kurum politikası", "Finansal grup paylaşımı", "Münhasır görev ve çıkar çatışması", "Lisans, yenileme ve sicil"],
+    tableThemes: ["Risk yönetimi, izleme-kontrol ve iç denetim ayrımı", "Yönetim kurulu ve uyum görevlisi sorumlulukları", "Lisans ve sicil akışı"],
+    caseThemes: ["Yetki devrine rağmen yönetim kurulu sorumluluğu", "Grup içi bilgi paylaşımında ŞİB gizliliği", "İzleme raporunun iç denetim bulgusuna dönüşmesi"],
+    glossary: [{ term: "Uyum programı", detail: "Politika, risk yönetimi, izleme, eğitim, iç denetim ve bildirim sisteminin bütünüdür." }],
+  },
+  "denetim-idari-ceza": {
+    deepDiveTitles: ["Yükümlülük denetiminin kapsamı", "İdari para cezası mantığı", "Adli ceza riski taşıyan ihlaller", "Ceza tavanı ve yükümlü türü", "Uyarı ve süre verilmesi", "Elektronik tebligat ve yargı yolu"],
+    tableThemes: ["İdari ve adli ceza ayrımı", "İhlal türü ve yaptırım mantığı"],
+    caseThemes: ["Kimlik tespiti ihlali ile ŞİB gizliliği ihlali karşılaştırması", "Denetimde bilgi-belge ibraz edilmemesi"],
+    glossary: [{ term: "Yükümlülük denetimi", detail: "Kayıt, belge ve sistemlerin AML/CFT mevzuatına uygunluğunun incelenmesidir." }],
+  },
+  "uzaktan-kimlik": {
+    deepDiveTitles: ["Uzaktan kimliğin KYC içindeki yeri", "Belge ve canlılık doğrulaması", "Temsil ve yetki kontrolü", "Fon kaynağı ve işlem amacı", "Yüksek riskte sıkı tedbir"],
+    tableThemes: ["Yüz yüze ve uzaktan kimlik ayrımı"],
+    caseThemes: ["Yabancı müşteri için uzaktan hesap açılışı"],
+    glossary: [{ term: "Canlılık kontrolü", detail: "Kimlik sahibinin gerçek zamanlı ve gerçek kişi olarak doğrulanmasıdır." }],
+  },
+  "diger-yukumlulukler": {
+    deepDiveTitles: ["Devamlı bilgi verme", "Bilgi ve belge verme", "Muhafaza ve ibraz", "Elektronik tebligat", "Erişim sistemi", "Koruma hükümleri"],
+    tableThemes: ["Bilgi-belge, muhafaza ve ibraz ayrımı"],
+    caseThemes: ["Kapanan hesap belgelerinin saklama başlangıcı"],
+    glossary: [{ term: "İbraz", detail: "Yetkili makam talep ettiğinde kayıt ve belgelerin sunulmasıdır." }],
+  },
+  "musterinin-taninmasi": {
+    deepDiveTitles: ["Kimlik tespitinin zamanı", "Gerçek faydalanıcı tespiti", "Başkası adına işlem", "Tüzel kişi ve temsil yetkisi", "Sürekli izleme", "Özel dikkat gerektiren işlemler", "Riskli ülke ve KEP/KPEP riski", "Muhabirlik ilişkileri", "Üçüncü tarafa güven", "Basitleştirilmiş tedbir", "Sıkılaştırılmış tedbir", "Elektronik ve kripto transfer bilgileri"],
+    tableThemes: ["Kimlik, temsilci ve gerçek faydalanıcı ayrımı", "SDD ve EDD ayrımı", "Elektronik transfer ve kripto transfer bilgi yükleri"],
+    caseThemes: ["Gerçek faydalanıcıyı gizleyen çok ortaklı yapı", "Profil dışı transferlerde sürekli izleme", "Şüphe halinde basitleştirilmiş tedbirin kapanması"],
+    glossary: [{ term: "Gerçek faydalanıcı", detail: "Tüzel yapı veya işlem üzerinde nihai kontrolü bulunan gerçek kişidir." }],
+  },
+};
+
+const densityByPriority: Record<LessonPriority, { deepDive: number; tables: number; cases: number; pitfalls: number; quiz: number; minutes: number }> = {
+  high: { deepDive: 8, tables: 2, cases: 3, pitfalls: 8, quiz: 10, minutes: 45 },
+  medium: { deepDive: 5, tables: 1, cases: 2, pitfalls: 6, quiz: 6, minutes: 30 },
+  short: { deepDive: 4, tables: 1, cases: 1, pitfalls: 4, quiz: 4, minutes: 20 },
+};
+
+function fillTo<T>(items: T[], count: number, makeItem: (index: number) => T) {
+  const filled = [...items];
+  while (filled.length < count) {
+    filled.push(makeItem(filled.length));
+  }
+  return filled.slice(0, count);
+}
+
+function buildDeepDiveSections(lesson: Lesson, base: BaseLessonContent, blueprint: LessonV4Blueprint, target: number): DeepDiveSection[] {
+  const titles = fillTo(blueprint.deepDiveTitles, target, (index) => base.reviewCards[index % base.reviewCards.length]?.term ?? `${lesson.title} uygulama noktası ${index + 1}`);
+  return titles.map((title, index) => ({
+    title,
+    body:
+      `${title} başlığı ${lesson.title} dersinde sınavın olay okuma tarafını güçlendirir. ${base.coreNarrative} Aday, bu alt başlıkta kuralı ezberlemekle kalmayıp müşteri profili, işlem amacı, fon kaynağı, yükümlü aksiyonu ve bildirim refleksini birlikte değerlendirmelidir. ${base.mustKnow[index % base.mustKnow.length]}`,
+    sourceTrace: base.pdfRange,
+  }));
+}
+
+function buildComparisonTables(lesson: Lesson, base: BaseLessonContent, blueprint: LessonV4Blueprint, target: number): ComparisonTable[] {
+  const themes = fillTo(blueprint.tableThemes, target, (index) => `${lesson.title} sınav ayrımları ${index + 1}`);
+  return themes.map((theme, index) => ({
+    title: theme,
+    columns: ["Kavram", "Sınavda aranan ayrım", "Yanılgı"],
+    rows: [
+      [base.reviewCards[0]?.term ?? lesson.title, base.reviewCards[0]?.detail ?? base.examFocus, base.confusions[0]],
+      [base.reviewCards[1]?.term ?? "Risk", base.reviewCards[1]?.detail ?? base.mustKnow[0], base.confusions[1 % base.confusions.length]],
+      [base.reviewCards[2]?.term ?? "Aksiyon", base.reviewCards[2]?.detail ?? base.mustKnow[1 % base.mustKnow.length], base.confusions[2 % base.confusions.length]],
+      ["Soru dili", base.examFocus, `Sadece tanım ezberi yetmez; olayda ${lesson.title} sonucunu doğuran unsur seçilir.`],
+    ],
+    sourceTrace: `${base.pdfRange}; ${base.legalAnchors[index % base.legalAnchors.length]}`,
+  }));
+}
+
+function buildCaseStudies(lesson: Lesson, base: BaseLessonContent, blueprint: LessonV4Blueprint, target: number): CaseStudy[] {
+  const themes = fillTo(blueprint.caseThemes, target, (index) => `${lesson.title} örnek olay ${index + 1}`);
+  return themes.map((theme, index) => ({
+    title: theme,
+    facts: `${base.casePattern} Olayda adaydan işlem taraflarını, zamanlamayı, risk göstergesini ve yükümlünün beklenen aksiyonunu ayırması beklenir.`,
+    analysis: `${lesson.title} için güvenli çözüm yolu önce somut şüphe/risk göstergesini saptamak, sonra mevzuat dayanağına göre bildirim, kimlik tespiti, sıkı tedbir, erteleme veya kayıt aksiyonunu seçmektir.`,
+    takeaway: base.mustKnow[index % base.mustKnow.length],
+    sourceTrace: base.pdfRange,
+  }));
+}
+
+function buildPitfalls(base: BaseLessonContent, target: number) {
+  return fillTo(base.confusions, target, (index) => {
+    const card = base.reviewCards[index % base.reviewCards.length];
+    return `${card.term} başlığını yalnız tanım olarak ezberlemek yerine sınav olayındaki sonuçla eşleştir.`;
+  });
+}
+
+function buildMiniQuiz(lesson: Lesson, base: BaseLessonContent, target: number): MiniQuizQuestion[] {
+  const prompts = fillTo(base.miniQuizSeed, target, (index) => `${lesson.title} konusunda sınavda en güvenli yorum hangisidir?`);
+  return prompts.map((prompt, index) => {
+    const correct = base.mustKnow[index % base.mustKnow.length];
+    const wrongs = [
+      base.confusions[index % base.confusions.length],
+      `${lesson.title} için sadece işlem tutarına bakmak yeterlidir.`,
+      `${lesson.title} değerlendirmesinde kaynak izi veya kayıt gerekmez.`,
+    ];
+    const answer = index % 4;
+    const options = [...wrongs];
+    options.splice(answer, 0, correct);
+    return {
+      prompt,
+      options,
+      answer,
+      explanation: `${correct} Bu nedenle doğru seçenek, tanımı olay aksiyonuyla birlikte kuran seçenektir.`,
+      sourceTrace: base.pdfRange,
+    };
+  });
+}
+
+function buildLessonContent(lesson: Lesson): LessonContent {
+  const base = baseLessonContentById[lesson.id];
+  const blueprint = lessonV4Blueprints[lesson.id];
+  const density = densityByPriority[base.priority];
+  const sourceTrace = `${base.pdfRange}; ${lesson.sourceRef}`;
+
+  return {
+    ...base,
+    sourceTrace,
+    overview: `${lesson.summary} Bu v4 ders notu, konuyu önce sınav sinyaliyle özetler; ardından olay çözümü, tablo ve mini testle pekiştirir.`,
+    estimatedMinutes: density.minutes,
+    deepDiveSections: buildDeepDiveSections(lesson, base, blueprint, density.deepDive),
+    examSignals: fillTo([base.examFocus, ...base.mustKnow], 6, (index) => base.reviewCards[index % base.reviewCards.length].detail),
+    comparisonTables: buildComparisonTables(lesson, base, blueprint, density.tables),
+    caseStudies: buildCaseStudies(lesson, base, blueprint, density.cases),
+    pitfalls: buildPitfalls(base, density.pitfalls),
+    glossary: [...base.reviewCards, ...blueprint.glossary],
+    miniQuiz: buildMiniQuiz(lesson, base, density.quiz),
+  };
+}
+
+export const lessonContentById: Record<string, LessonContent> = Object.fromEntries(
+  lessons.map((lesson) => [lesson.id, buildLessonContent(lesson)]),
+) as Record<string, LessonContent>;
 
 export const lessonDetails: Record<string, LessonDetail> = {
   "masak-gorevleri": {

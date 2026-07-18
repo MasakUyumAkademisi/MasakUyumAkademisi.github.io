@@ -17,6 +17,7 @@ import {
 type ViewId = "lessons" | "practice" | "exam" | "progress";
 type ExamMode = ModuleId | "mixed";
 type AnswerMap = Record<string, number>;
+type LessonTabId = "narrative" | "tables" | "cases" | "pitfalls" | "quiz";
 
 type ExamResult = {
   id: string;
@@ -59,6 +60,14 @@ const navItems: { id: ViewId; label: string; icon: string }[] = [
   { id: "practice", label: "Soru Çöz", icon: "S" },
   { id: "exam", label: "Deneme", icon: "T" },
   { id: "progress", label: "İlerleme", icon: "I" },
+];
+
+const lessonTabs: { id: LessonTabId; label: string }[] = [
+  { id: "narrative", label: "Anlatım" },
+  { id: "tables", label: "Tablolar" },
+  { id: "cases", label: "Örnek Olaylar" },
+  { id: "pitfalls", label: "Kritik Ayrımlar" },
+  { id: "quiz", label: "Mini Test" },
 ];
 
 const viewCopy: Record<ViewId, { eyebrow: string; title: string; subtitle: string }> = {
@@ -183,6 +192,7 @@ export default function MasakPrepApp() {
   const [activeLesson, setActiveLesson] = useState(lessons[0].id);
   const [activeQuestion, setActiveQuestion] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
+  const [activeLessonTab, setActiveLessonTab] = useState<LessonTabId>("narrative");
   const [progress, setProgress] = useState<ProgressState>(defaultProgress);
   const [examSession, setExamSession] = useState<ExamSession | null>(null);
   const [lastResult, setLastResult] = useState<ExamResult | null>(null);
@@ -197,6 +207,10 @@ export default function MasakPrepApp() {
   useEffect(() => {
     window.localStorage.setItem("masak-prep-progress-v2", JSON.stringify(progress));
   }, [progress]);
+
+  useEffect(() => {
+    setActiveLessonTab("narrative");
+  }, [activeLesson]);
 
   useEffect(() => {
     if (!examSession || examSession.status !== "running") {
@@ -581,46 +595,121 @@ export default function MasakPrepApp() {
               </div>
               <div className="lesson-stat-strip">
                 <div><strong>{currentLesson.officialQuestionCount}</strong><span>Resmi ağırlık</span></div>
-                <div><strong>{currentContent.priority === "high" ? "Yüksek" : currentContent.priority === "medium" ? "Orta" : "Kısa"}</strong><span>Öncelik</span></div>
+                <div><strong>{currentContent.estimatedMinutes} dk</strong><span>Çalışma süresi</span></div>
                 <div><strong>{progress.completedLessons.includes(currentLesson.id) ? "Tamam" : "Açık"}</strong><span>Ders durumu</span></div>
               </div>
               <div className="callout focus-callout"><p className="callout-title">Sınavda Çıkar</p><p>{currentContent.examFocus}</p></div>
-              <section className="narrative-block">
-                <h3>Ana Anlatım</h3>
-                <p>{currentContent.coreNarrative}</p>
-                <span>{currentContent.pdfRange}</span>
+              <section className="narrative-block lesson-overview">
+                <h3>Özet</h3>
+                <p>{currentContent.overview}</p>
+                <span>{currentContent.sourceTrace}</span>
               </section>
-              <div className="lesson-detail-grid priority-grid">
-                <section className="detail-block">
-                  <h3>Mutlaka Bil</h3>
-                  <ul>{currentContent.mustKnow.map((item) => <li key={item}>{item}</li>)}</ul>
+              <nav className="lesson-tab-list" aria-label="Ders bölümleri">
+                {lessonTabs.map((tab) => (
+                  <button className={activeLessonTab === tab.id ? "active" : ""} key={tab.id} onClick={() => setActiveLessonTab(tab.id)} type="button">
+                    {tab.label}
+                  </button>
+                ))}
+              </nav>
+
+              {activeLessonTab === "narrative" && (
+                <section className="lesson-tab-panel">
+                  <div className="lesson-detail-grid priority-grid">
+                    <section className="detail-block">
+                      <h3>Sınav Sinyalleri</h3>
+                      <ul>{currentContent.examSignals.map((item) => <li key={item}>{item}</li>)}</ul>
+                    </section>
+                    <section className="detail-block">
+                      <h3>Mutlaka Bil</h3>
+                      <ul>{currentContent.mustKnow.map((item) => <li key={item}>{item}</li>)}</ul>
+                    </section>
+                  </div>
+                  <div className="deep-dive-list">
+                    {currentContent.deepDiveSections.map((section) => (
+                      <section className="content-section" key={section.title}>
+                        <h3>{section.title}</h3>
+                        <p>{section.body}</p>
+                        <span>{section.sourceTrace}</span>
+                      </section>
+                    ))}
+                  </div>
+                  <section className="review-section">
+                    <h3>Hızlı Tekrar</h3>
+                    <dl className="card-grid">
+                      {currentContent.glossary.map((card) => (
+                        <div className="study-card" key={card.term}><dt>{card.term}</dt><dd>{card.detail}</dd></div>
+                      ))}
+                    </dl>
+                  </section>
                 </section>
-                <section className="detail-block">
-                  <h3>Kritik Ayrımlar</h3>
-                  <ul>{currentContent.confusions.map((item) => <li key={item}>{item}</li>)}</ul>
-                </section>
-              </div>
-              <div className="callout scenario"><p className="callout-title">Örnek Olay</p><p>{currentContent.casePattern}</p></div>
-              <section className="review-section">
-                <h3>Hızlı Tekrar</h3>
-                <dl className="card-grid">
-                  {currentContent.reviewCards.map((card) => (
-                    <div className="study-card" key={card.term}><dt>{card.term}</dt><dd>{card.detail}</dd></div>
+              )}
+
+              {activeLessonTab === "tables" && (
+                <section className="lesson-tab-panel table-stack">
+                  {currentContent.comparisonTables.map((table) => (
+                    <div className="table-card" key={table.title}>
+                      <div className="table-card-head"><h3>{table.title}</h3><span>{table.sourceTrace}</span></div>
+                      <div className="table-scroll">
+                        <table className="comparison-table">
+                          <thead><tr>{table.columns.map((column) => <th key={column}>{column}</th>)}</tr></thead>
+                          <tbody>
+                            {table.rows.map((row) => (
+                              <tr key={row.join("|")}>{row.map((cell) => <td key={cell}>{cell}</td>)}</tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
                   ))}
-                </dl>
-              </section>
-              <details className="inline-source-panel">
-                <summary>Mevzuat dayanakları</summary>
-                <div className="source-note-list">
-                  {currentContent.legalAnchors.map((item) => <span key={item}>{item}</span>)}
-                </div>
-              </details>
-              <section className="mini-quiz-box">
-                <div>
-                  <h3>Mini Test Hazırlığı</h3>
-                  <p>{currentContent.miniQuizSeed.join(" ")}</p>
-                </div>
-              </section>
+                </section>
+              )}
+
+              {activeLessonTab === "cases" && (
+                <section className="lesson-tab-panel case-grid">
+                  {currentContent.caseStudies.map((item) => (
+                    <article className="case-card" key={item.title}>
+                      <h3>{item.title}</h3>
+                      <p><strong>Olay:</strong> {item.facts}</p>
+                      <p><strong>Çözüm:</strong> {item.analysis}</p>
+                      <p><strong>Sınav notu:</strong> {item.takeaway}</p>
+                      <span>{item.sourceTrace}</span>
+                    </article>
+                  ))}
+                </section>
+              )}
+
+              {activeLessonTab === "pitfalls" && (
+                <section className="lesson-tab-panel">
+                  <div className="lesson-detail-grid priority-grid">
+                    <section className="detail-block">
+                      <h3>Kritik Ayrımlar</h3>
+                      <ul>{currentContent.pitfalls.map((item) => <li key={item}>{item}</li>)}</ul>
+                    </section>
+                    <section className="detail-block">
+                      <h3>Mevzuat Dayanakları</h3>
+                      <ul>{currentContent.legalAnchors.map((item) => <li key={item}>{item}</li>)}</ul>
+                    </section>
+                  </div>
+                </section>
+              )}
+
+              {activeLessonTab === "quiz" && (
+                <section className="lesson-tab-panel quiz-list">
+                  {currentContent.miniQuiz.map((item, questionIndex) => (
+                    <article className="mini-question" key={`${item.prompt}-${questionIndex}`}>
+                      <div className="question-meta"><span className="tag">Ders içi mini test</span><span className="tag blue">{questionIndex + 1}/{currentContent.miniQuiz.length}</span></div>
+                      <h3>{item.prompt}</h3>
+                      <ol className="mini-options">
+                        {item.options.map((option, optionIndex) => (
+                          <li className={optionIndex === item.answer ? "correct" : ""} key={option}>{String.fromCharCode(65 + optionIndex)}. {option}</li>
+                        ))}
+                      </ol>
+                      <p><strong>Çözüm:</strong> {item.explanation}</p>
+                      <span>{item.sourceTrace}</span>
+                    </article>
+                  ))}
+                </section>
+              )}
               <div className="top-actions">
                 <button className="button primary" onClick={completeLesson} type="button">Dersi Tamamla</button>
                 <button

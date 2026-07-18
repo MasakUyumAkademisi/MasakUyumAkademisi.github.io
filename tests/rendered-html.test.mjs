@@ -23,7 +23,7 @@ async function render() {
   );
 }
 
-test("server-renders the MASAK v3 lesson shell", async () => {
+test("server-renders the MASAK v4 lesson shell", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
@@ -32,11 +32,13 @@ test("server-renders the MASAK v3 lesson shell", async () => {
   assert.match(html, /<title>MASAK Sınav Hazırlık<\/title>/i);
   assert.match(html, /Ana kaynak MASAK_Rehber_12-01-2026\.pdf/);
   assert.match(html, /Sınavda Çıkar/);
-  assert.match(html, /Ana Anlatım/);
+  assert.match(html, /Anlatım/);
+  assert.match(html, /Tablolar/);
+  assert.match(html, /Örnek Olaylar/);
   assert.match(html, /Kritik Ayrımlar/);
-  assert.match(html, /Örnek Olay/);
+  assert.match(html, /Sınav Sinyalleri/);
   assert.match(html, /Hızlı Tekrar/);
-  assert.match(html, /Mini Test Hazırlığı/);
+  assert.match(html, /Mini Test/);
   assert.doesNotMatch(html, /Bugün/);
   assert.doesNotMatch(html, /<h2 class="section-title">Kaynaklar<\/h2>/);
   assert.match(html, /manifest\.webmanifest/);
@@ -79,6 +81,15 @@ test("validates expanded lesson and question bank data", () => {
     assert.match(content, /kitap-modül1ve2\.docx/);
     assert.match(content, /Masak 500 Soru Çalışması Soru Cevap\.pdf/);
     assert.match(content, /lessonContentById:\s*Record<string,\s*LessonContent>/);
+    assert.match(content, /sourceTrace:/);
+    assert.match(content, /overview:/);
+    assert.match(content, /deepDiveSections:/);
+    assert.match(content, /examSignals:/);
+    assert.match(content, /comparisonTables:/);
+    assert.match(content, /caseStudies:/);
+    assert.match(content, /pitfalls:/);
+    assert.match(content, /glossary:/);
+    assert.match(content, /miniQuiz:/);
     assert.match(content, /pdfRange:/);
     assert.match(content, /mustKnow:/);
     assert.match(content, /confusions:/);
@@ -88,6 +99,9 @@ test("validates expanded lesson and question bank data", () => {
     const lessonContentEntries = [...content.matchAll(/pdfRange:\s*"MASAK_Rehber/g)];
     assert.equal(lessonContentEntries.length, 14);
     assert.ok([...content.matchAll(/priority:\s*"high"/g)].length >= 5);
+    assert.match(content, /high:\s*\{\s*deepDive:\s*8,\s*tables:\s*2,\s*cases:\s*3,\s*pitfalls:\s*8,\s*quiz:\s*10/);
+    assert.match(content, /medium:\s*\{\s*deepDive:\s*5,\s*tables:\s*1,\s*cases:\s*2,\s*pitfalls:\s*6,\s*quiz:\s*6/);
+    assert.match(content, /short:\s*\{\s*deepDive:\s*4,\s*tables:\s*1,\s*cases:\s*1,\s*pitfalls:\s*4,\s*quiz:\s*4/);
 
     const lessonBlocks = [...content.matchAll(/moduleId:\s*"(mod[12])"[\s\S]*?bankQuestionCount:\s*(\d+)/g)];
     const mod1 = lessonBlocks.filter((match) => match[1] === "mod1");

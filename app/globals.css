@@ -657,6 +657,151 @@ a {
   align-items: start;
 }
 
+.lesson-tab-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0.65rem;
+}
+
+.lesson-tab-list button {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--muted);
+  padding: 0.48rem 0.7rem;
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.lesson-tab-list button.active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.lesson-tab-panel,
+.deep-dive-list,
+.table-stack,
+.quiz-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.content-section,
+.table-card,
+.case-card,
+.mini-question {
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: #fff;
+  padding: 1rem;
+}
+
+.content-section h3,
+.table-card h3,
+.case-card h3,
+.mini-question h3 {
+  margin: 0 0 0.45rem;
+  color: var(--ink);
+  font-size: 0.95rem;
+}
+
+.content-section p,
+.case-card p,
+.mini-question p {
+  margin: 0.45rem 0 0;
+  color: var(--muted);
+  line-height: 1.62;
+}
+
+.content-section span,
+.table-card-head span,
+.case-card span,
+.mini-question > span {
+  display: inline-flex;
+  margin-top: 0.75rem;
+  border-radius: 999px;
+  background: var(--panel-soft);
+  color: var(--accent-strong);
+  padding: 0.26rem 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.table-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-bottom: 0.65rem;
+}
+
+.table-card-head h3 {
+  margin: 0;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.comparison-table {
+  width: 100%;
+  min-width: 42rem;
+  border-collapse: collapse;
+}
+
+.comparison-table th,
+.comparison-table td {
+  border: 1px solid var(--line);
+  padding: 0.65rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.comparison-table th {
+  background: #f7fbfa;
+  color: var(--ink);
+  font-size: 0.78rem;
+}
+
+.comparison-table td {
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.case-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.mini-options {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0.7rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mini-options li {
+  border: 1px solid var(--line);
+  border-radius: 0.45rem;
+  background: #fbfcfc;
+  padding: 0.55rem 0.65rem;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.mini-options li.correct {
+  border-color: rgba(15, 118, 110, 0.35);
+  background: #eef8f5;
+  color: var(--accent-strong);
+  font-weight: 800;
+}
+
 .callout {
   border: 1px solid var(--line);
   border-left: 4px solid var(--accent);
@@ -1054,6 +1199,7 @@ a {
   .exam-grid,
   .metric-grid,
   .card-grid,
+  .case-grid,
   .lesson-detail-grid {
     grid-template-columns: 1fr;
   }
