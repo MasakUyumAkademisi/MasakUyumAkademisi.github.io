@@ -493,6 +493,68 @@ a {
   align-items: start;
 }
 
+.learning-route {
+  display: grid;
+  gap: 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: #fbfcfc;
+  padding: 0.9rem;
+}
+
+.learning-route h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.95rem;
+}
+
+.learning-steps {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.learning-step {
+  display: grid;
+  gap: 0.25rem;
+  align-content: start;
+  min-height: 5.6rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: #fff;
+  padding: 0.7rem;
+  text-align: left;
+}
+
+.learning-step.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.learning-step span {
+  display: grid;
+  width: 1.65rem;
+  height: 1.65rem;
+  place-items: center;
+  border-radius: 0.4rem;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.learning-step strong {
+  color: var(--ink);
+  font-size: 0.82rem;
+  line-height: 1.2;
+}
+
+.learning-step small {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 750;
+}
+
 .lesson-tab-list {
   display: flex;
   flex-wrap: wrap;
@@ -515,6 +577,38 @@ a {
   border-color: var(--accent);
   background: var(--accent);
   color: #fff;
+}
+
+.teacher-note {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: start;
+  border: 1px solid rgba(49, 87, 164, 0.22);
+  border-radius: 0.5rem;
+  background: #f6f8fd;
+  padding: 0.85rem;
+}
+
+.teacher-note > span {
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  border-radius: 0.5rem;
+  background: var(--blue);
+  color: #fff;
+  font-weight: 850;
+}
+
+.teacher-note strong {
+  color: var(--ink);
+}
+
+.teacher-note p {
+  margin: 0.2rem 0 0;
+  color: var(--muted);
+  line-height: 1.5;
 }
 
 .lesson-tab-panel,
@@ -542,6 +636,29 @@ a {
   margin: 0 0 0.45rem;
   color: var(--ink);
   font-size: 0.95rem;
+}
+
+.content-section-head {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  gap: 0.65rem;
+  align-items: center;
+  margin-bottom: 0.45rem;
+}
+
+.content-section-head span {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border-radius: 0.45rem;
+  background: var(--panel-soft);
+  color: var(--accent-strong);
+  font-weight: 850;
+}
+
+.content-section-head h3 {
+  margin: 0;
 }
 
 .content-section p,
@@ -1012,6 +1129,7 @@ a {
   .metric-grid,
   .card-grid,
   .case-grid,
+  .learning-steps,
   .lesson-detail-grid {
     grid-template-columns: 1fr;
   }
@@ -1028,6 +1146,10 @@ a {
 
   .option {
     grid-template-columns: 1.9rem minmax(0, 1fr);
+  }
+
+  .teacher-note {
+    grid-template-columns: 1fr;
   }
 
   .lesson-stat-strip {

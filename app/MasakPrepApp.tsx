@@ -70,6 +70,34 @@ const lessonTabs: { id: LessonTabId; label: string }[] = [
   { id: "quiz", label: "Mini Test" },
 ];
 
+const lessonTabGuides: Record<LessonTabId, { step: string; title: string; helper: string }> = {
+  narrative: {
+    step: "1",
+    title: "Kuralı öğren",
+    helper: "Tanım ezberi yerine olayda hangi risk göstergesinin doğduğunu takip et.",
+  },
+  tables: {
+    step: "2",
+    title: "Ayrımı netleştir",
+    helper: "Benzer kavramları yan yana karşılaştır; sınav çeldiricileri genelde buradan gelir.",
+  },
+  cases: {
+    step: "3",
+    title: "Olaya uygula",
+    helper: "Önce tarafları ve işlem amacını bul, sonra yükümlünün doğru aksiyonunu seç.",
+  },
+  pitfalls: {
+    step: "4",
+    title: "Hata payını azalt",
+    helper: "Yanlış seçeneklerin neden cazip göründüğünü öğren; kısa tekrarını buradan yap.",
+  },
+  quiz: {
+    step: "5",
+    title: "Kendini ölç",
+    helper: "Cevaplamadan önce gerekçeni kur; çözüm açıklamasını sonra kontrol et.",
+  },
+};
+
 const viewCopy: Record<ViewId, { eyebrow: string; title: string; subtitle: string }> = {
   lessons: {
     eyebrow: "Resmi Konu Dağılımı",
@@ -251,6 +279,7 @@ export default function MasakPrepApp() {
 
   const currentLesson = getLessonById(activeLesson);
   const currentContent = lessonContentById[currentLesson.id];
+  const currentTabGuide = lessonTabGuides[activeLessonTab];
   const filteredLessons = lessons.filter((lesson) => lesson.moduleId === activeModule);
   const currentQuestion = questions[activeQuestion];
   const answeredCount = Object.keys(progress.answered).length;
@@ -623,6 +652,31 @@ export default function MasakPrepApp() {
                 <p>{currentContent.overview}</p>
                 <span>{currentContent.sourceTrace}</span>
               </section>
+              <section className="learning-route" aria-label="Çalışma rotası">
+                <div className="section-head">
+                  <div>
+                    <h3>Çalışma Rotası</h3>
+                    <p className="section-subtitle">Dersi bu sırayla çalışırsan konu, ayrım ve soru çözümü aynı yerde birleşir.</p>
+                  </div>
+                </div>
+                <div className="learning-steps">
+                  {lessonTabs.map((tab) => {
+                    const guide = lessonTabGuides[tab.id];
+                    return (
+                      <button
+                        className={`learning-step ${activeLessonTab === tab.id ? "active" : ""}`}
+                        key={tab.id}
+                        onClick={() => setActiveLessonTab(tab.id)}
+                        type="button"
+                      >
+                        <span>{guide.step}</span>
+                        <strong>{guide.title}</strong>
+                        <small>{tab.label}</small>
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
               <nav className="lesson-tab-list" aria-label="Ders bölümleri">
                 {lessonTabs.map((tab) => (
                   <button className={activeLessonTab === tab.id ? "active" : ""} key={tab.id} onClick={() => setActiveLessonTab(tab.id)} type="button">
@@ -630,6 +684,13 @@ export default function MasakPrepApp() {
                   </button>
                 ))}
               </nav>
+              <div className="teacher-note">
+                <span>{currentTabGuide.step}</span>
+                <div>
+                  <strong>{currentTabGuide.title}</strong>
+                  <p>{currentTabGuide.helper}</p>
+                </div>
+              </div>
 
               {activeLessonTab === "narrative" && (
                 <section className="lesson-tab-panel">
@@ -644,9 +705,12 @@ export default function MasakPrepApp() {
                     </section>
                   </div>
                   <div className="deep-dive-list">
-                    {currentContent.deepDiveSections.map((section) => (
+                    {currentContent.deepDiveSections.map((section, sectionIndex) => (
                       <section className="content-section" key={section.title}>
-                        <h3>{section.title}</h3>
+                        <div className="content-section-head">
+                          <span>{sectionIndex + 1}</span>
+                          <h3>{section.title}</h3>
+                        </div>
                         <p>{section.body}</p>
                         <span>{section.sourceTrace}</span>
                       </section>
