@@ -65,11 +65,13 @@ test("keeps PWA assets and source attribution available", async () => {
   assert.match(layout, /lang="tr"/);
   assert.match(component, /localStorage/);
   assert.match(component, /masak-prep-progress-v2/);
-  assert.match(component, /Çalışma Rotası/);
+  assert.match(component, /masak-prep-theme/);
+  assert.match(component, /theme-toggle/);
+  assert.match(component, /lesson-tab-caption/);
   assert.match(component, /Kuralı öğren/);
   assert.match(component, /Ayrımı netleştir/);
-  assert.match(component, /learning-route/);
-  assert.match(component, /teacher-note/);
+  assert.match(component, /lesson-tab-step/);
+  assert.match(component, /currentTabGuide/);
   assert.doesNotMatch(component, /SkeletonPreview|codex-preview/);
 });
 

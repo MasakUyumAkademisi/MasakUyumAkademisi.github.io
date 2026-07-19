@@ -18,6 +18,7 @@ type ViewId = "lessons" | "practice" | "exam" | "progress";
 type ExamMode = ModuleId | "mixed";
 type AnswerMap = Record<string, number>;
 type LessonTabId = "narrative" | "tables" | "cases" | "pitfalls" | "quiz";
+type ThemeMode = "light" | "dark";
 
 type ExamResult = {
   id: string;
@@ -160,6 +161,19 @@ function loadProgress(): ProgressState {
   return defaultProgress;
 }
 
+function loadTheme(): ThemeMode {
+  if (typeof window === "undefined") {
+    return "light";
+  }
+
+  const savedTheme = window.localStorage.getItem("masak-prep-theme");
+  if (savedTheme === "light" || savedTheme === "dark") {
+    return savedTheme;
+  }
+
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
 function formatTime(totalSeconds: number) {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
@@ -236,6 +250,7 @@ export default function MasakPrepApp() {
   const [lastResult, setLastResult] = useState<ExamResult | null>(null);
   const [miniQuizAnswers, setMiniQuizAnswers] = useState<Record<number, number>>({});
   const [flippedTerms, setFlippedTerms] = useState<string[]>([]);
+  const [theme, setTheme] = useState<ThemeMode>("light");
 
   useEffect(() => {
     // Hydrate from localStorage after mount (SSR-safe: server and first client
@@ -243,6 +258,8 @@ export default function MasakPrepApp() {
     // once the real external-store value is available).
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setProgress(loadProgress());
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setTheme(loadTheme());
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("/sw.js").catch(() => undefined);
     }
@@ -251,6 +268,12 @@ export default function MasakPrepApp() {
   useEffect(() => {
     window.localStorage.setItem("masak-prep-progress-v2", JSON.stringify(progress));
   }, [progress]);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    document.documentElement.style.colorScheme = theme;
+    window.localStorage.setItem("masak-prep-theme", theme);
+  }, [theme]);
 
   useEffect(() => {
     if (!examSession || examSession.status !== "running") {
@@ -307,6 +330,14 @@ export default function MasakPrepApp() {
     .sort((a, b) => b[1] - a[1])
     .map(([lessonId]) => getLessonById(lessonId).title);
   const activeCopy = viewCopy[activeView];
+
+  function toggleTheme() {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
+    document.documentElement.dataset.theme = nextTheme;
+    document.documentElement.style.colorScheme = nextTheme;
+    window.localStorage.setItem("masak-prep-theme", nextTheme);
+  }
 
   function completeLesson() {
     setProgress((current) => {
@@ -563,27 +594,42 @@ export default function MasakPrepApp() {
   }
 
   return (
-    <div className="app-shell">
-      <aside className="sidebar" aria-label="Ana gezinme">
-        <div className="brand">
-          <div className="brand-mark">M</div>
+    <div className="app-shell" data-theme={theme}>
+      <header className="topnav">
+        <div className="topnav-brand">
+          <div className="topnav-mark" aria-hidden="true">M</div>
           <div>
-            <p className="brand-title">MASAK Hazırlık v2</p>
-            <p className="brand-subtitle">Güncel mevzuat ve SPL simülasyonu</p>
+            <p className="topnav-title">MASAK Hazırlık</p>
+            <p className="topnav-subtitle">Uyum görevlisi yetkilendirme sınavı</p>
           </div>
         </div>
-        <nav className="nav">
+        <nav className="topnav-links" aria-label="Ana gezinme">
           {navItems.map((item) => (
-            <button className={`nav-button ${activeView === item.id ? "active" : ""}`} key={item.id} onClick={() => setActiveView(item.id)} type="button">
-              <span className="nav-icon" aria-hidden="true">{item.icon}</span>
+            <button
+              aria-current={activeView === item.id ? "page" : undefined}
+              className={activeView === item.id ? "active" : ""}
+              key={item.id}
+              onClick={() => setActiveView(item.id)}
+              type="button"
+            >
               {item.label}
             </button>
           ))}
         </nav>
-        <div className="sidebar-note">
-          Mevzuat son kontrol: {examRules.legislationCheckedAt}. Eğitim amaçlıdır; resmi sınav sorusu değildir.
+        <div className="topnav-actions">
+          <span className="topnav-meta">Mevzuat kontrol: {examRules.legislationCheckedAt}</span>
+          <button
+            aria-label={theme === "dark" ? "Açık moda geç" : "Koyu moda geç"}
+            aria-pressed={theme === "dark"}
+            className="theme-toggle"
+            onClick={toggleTheme}
+            type="button"
+          >
+            <span aria-hidden="true">{theme === "dark" ? "☀" : "◐"}</span>
+            <strong>{theme === "dark" ? "Açık" : "Koyu"}</strong>
+          </button>
         </div>
-      </aside>
+      </header>
 
       <main className="main">
         <header className="topbar">
@@ -608,6 +654,7 @@ export default function MasakPrepApp() {
                 {modules.map((module) => (
                   <button
                     className={`module-button ${activeModule === module.id ? "active" : ""}`}
+                    aria-pressed={activeModule === module.id}
                     key={module.id}
                     onClick={() => {
                       setActiveModule(module.id);
@@ -627,7 +674,14 @@ export default function MasakPrepApp() {
               </div>
               <div className="lesson-list">
                 {filteredLessons.map((lesson) => (
-                  <button className={`lesson-button ${activeLesson === lesson.id ? "active" : ""}`} key={lesson.id} onClick={() => { setActiveLesson(lesson.id); setActiveLessonTab("narrative"); setMiniQuizAnswers({}); setFlippedTerms([]); }} type="button">
+                  <button
+                    aria-label={`${lesson.order}. ${lesson.title}. Resmi ağırlık: ${lesson.officialQuestionCount} soru`}
+                    aria-pressed={activeLesson === lesson.id}
+                    className={`lesson-button ${activeLesson === lesson.id ? "active" : ""}`}
+                    key={lesson.id}
+                    onClick={() => { setActiveLesson(lesson.id); setActiveLessonTab("narrative"); setMiniQuizAnswers({}); setFlippedTerms([]); }}
+                    type="button"
+                  >
                     <strong>{lesson.order}. {lesson.title}</strong>
                     <span className="lesson-meta">Resmi ağırlık: {lesson.officialQuestionCount} soru</span>
                   </button>
@@ -652,45 +706,23 @@ export default function MasakPrepApp() {
                 <p>{currentContent.overview}</p>
                 <span>{currentContent.sourceTrace}</span>
               </section>
-              <section className="learning-route" aria-label="Çalışma rotası">
-                <div className="section-head">
-                  <div>
-                    <h3>Çalışma Rotası</h3>
-                    <p className="section-subtitle">Dersi bu sırayla çalışırsan konu, ayrım ve soru çözümü aynı yerde birleşir.</p>
-                  </div>
-                </div>
-                <div className="learning-steps">
-                  {lessonTabs.map((tab) => {
-                    const guide = lessonTabGuides[tab.id];
-                    return (
-                      <button
-                        className={`learning-step ${activeLessonTab === tab.id ? "active" : ""}`}
-                        key={tab.id}
-                        onClick={() => setActiveLessonTab(tab.id)}
-                        type="button"
-                      >
-                        <span>{guide.step}</span>
-                        <strong>{guide.title}</strong>
-                        <small>{tab.label}</small>
-                      </button>
-                    );
-                  })}
-                </div>
-              </section>
               <nav className="lesson-tab-list" aria-label="Ders bölümleri">
                 {lessonTabs.map((tab) => (
-                  <button className={activeLessonTab === tab.id ? "active" : ""} key={tab.id} onClick={() => setActiveLessonTab(tab.id)} type="button">
+                  <button
+                    aria-pressed={activeLessonTab === tab.id}
+                    className={activeLessonTab === tab.id ? "active" : ""}
+                    key={tab.id}
+                    onClick={() => setActiveLessonTab(tab.id)}
+                    type="button"
+                  >
+                    <span className="lesson-tab-step">{lessonTabGuides[tab.id].step}</span>
                     {tab.label}
                   </button>
                 ))}
               </nav>
-              <div className="teacher-note">
-                <span>{currentTabGuide.step}</span>
-                <div>
-                  <strong>{currentTabGuide.title}</strong>
-                  <p>{currentTabGuide.helper}</p>
-                </div>
-              </div>
+              <p className="lesson-tab-caption">
+                <strong>{currentTabGuide.title}.</strong> {currentTabGuide.helper}
+              </p>
 
               {activeLessonTab === "narrative" && (
                 <section className="lesson-tab-panel">
@@ -947,14 +979,6 @@ export default function MasakPrepApp() {
           </section>
         )}
       </main>
-
-      <nav className="mobile-nav" aria-label="Mobil gezinme">
-        {navItems.map((item) => (
-          <button className={activeView === item.id ? "active" : ""} key={item.id} onClick={() => setActiveView(item.id)} type="button">
-            {item.label}
-          </button>
-        ))}
-      </nav>
     </div>
   );
 }
