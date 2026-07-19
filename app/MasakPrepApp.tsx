@@ -138,10 +138,20 @@ function formatTime(totalSeconds: number) {
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
+function shuffle<T>(items: T[]): T[] {
+  const result = [...items];
+  for (let i = result.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
 function pickExamQuestions(mode: ExamMode) {
   const pool = mode === "mixed" ? questions : getQuestionsForModule(mode);
-  const selected = [...pool].sort((a, b) => a.id.localeCompare(b.id)).slice(0, examRules.questionCount);
-  return selected.length >= examRules.questionCount ? selected : pool;
+  const shuffled = shuffle(pool);
+  const selected = shuffled.slice(0, examRules.questionCount);
+  return selected.length >= examRules.questionCount ? selected : shuffled;
 }
 
 function scoreExam(session: ExamSession): ExamResult {
@@ -196,8 +206,14 @@ export default function MasakPrepApp() {
   const [progress, setProgress] = useState<ProgressState>(defaultProgress);
   const [examSession, setExamSession] = useState<ExamSession | null>(null);
   const [lastResult, setLastResult] = useState<ExamResult | null>(null);
+  const [miniQuizAnswers, setMiniQuizAnswers] = useState<Record<number, number>>({});
+  const [flippedTerms, setFlippedTerms] = useState<string[]>([]);
 
   useEffect(() => {
+    // Hydrate from localStorage after mount (SSR-safe: server and first client
+    // render both use defaultProgress, so this intentionally updates state
+    // once the real external-store value is available).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setProgress(loadProgress());
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("/sw.js").catch(() => undefined);
@@ -207,10 +223,6 @@ export default function MasakPrepApp() {
   useEffect(() => {
     window.localStorage.setItem("masak-prep-progress-v2", JSON.stringify(progress));
   }, [progress]);
-
-  useEffect(() => {
-    setActiveLessonTab("narrative");
-  }, [activeLesson]);
 
   useEffect(() => {
     if (!examSession || examSession.status !== "running") {
@@ -231,6 +243,10 @@ export default function MasakPrepApp() {
     }, 1000);
 
     return () => window.clearInterval(timer);
+    // Deliberately narrowed deps: only status/remainingSeconds should restart
+    // the timer. Including the full examSession object would reset the
+    // interval on every answer/mark click during a running exam.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [examSession?.status, examSession?.remainingSeconds]);
 
   const currentLesson = getLessonById(activeLesson);
@@ -567,6 +583,9 @@ export default function MasakPrepApp() {
                     onClick={() => {
                       setActiveModule(module.id);
                       setActiveLesson(lessons.find((lesson) => lesson.moduleId === module.id)?.id ?? lessons[0].id);
+                      setActiveLessonTab("narrative");
+                      setMiniQuizAnswers({});
+                      setFlippedTerms([]);
                     }}
                     type="button"
                   >
@@ -579,7 +598,7 @@ export default function MasakPrepApp() {
               </div>
               <div className="lesson-list">
                 {filteredLessons.map((lesson) => (
-                  <button className={`lesson-button ${activeLesson === lesson.id ? "active" : ""}`} key={lesson.id} onClick={() => setActiveLesson(lesson.id)} type="button">
+                  <button className={`lesson-button ${activeLesson === lesson.id ? "active" : ""}`} key={lesson.id} onClick={() => { setActiveLesson(lesson.id); setActiveLessonTab("narrative"); setMiniQuizAnswers({}); setFlippedTerms([]); }} type="button">
                     <strong>{lesson.order}. {lesson.title}</strong>
                     <span className="lesson-meta">Resmi ağırlık: {lesson.officialQuestionCount} soru</span>
                   </button>
@@ -634,12 +653,30 @@ export default function MasakPrepApp() {
                     ))}
                   </div>
                   <section className="review-section">
-                    <h3>Hızlı Tekrar</h3>
-                    <dl className="card-grid">
-                      {currentContent.glossary.map((card) => (
-                        <div className="study-card" key={card.term}><dt>{card.term}</dt><dd>{card.detail}</dd></div>
-                      ))}
-                    </dl>
+                    <div className="section-head">
+                      <h3>Hızlı Tekrar</h3>
+                      <span className="hint-text">Önce hatırlamayı deneyin, sonra karta tıklayıp kontrol edin</span>
+                    </div>
+                    <div className="card-grid">
+                      {currentContent.glossary.map((card) => {
+                        const isFlipped = flippedTerms.includes(card.term);
+                        return (
+                          <button
+                            className={`study-card flip-card ${isFlipped ? "flipped" : ""}`}
+                            key={card.term}
+                            onClick={() =>
+                              setFlippedTerms((current) =>
+                                current.includes(card.term) ? current.filter((term) => term !== card.term) : [...current, card.term],
+                              )
+                            }
+                            type="button"
+                          >
+                            <span className="study-card-term">{card.term}</span>
+                            <span className="study-card-detail">{isFlipped ? card.detail : "Tanımı görmek için dokunun"}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </section>
                 </section>
               )}
@@ -695,19 +732,53 @@ export default function MasakPrepApp() {
 
               {activeLessonTab === "quiz" && (
                 <section className="lesson-tab-panel quiz-list">
-                  {currentContent.miniQuiz.map((item, questionIndex) => (
-                    <article className="mini-question" key={`${item.prompt}-${questionIndex}`}>
-                      <div className="question-meta"><span className="tag">Ders içi mini test</span><span className="tag blue">{questionIndex + 1}/{currentContent.miniQuiz.length}</span></div>
-                      <h3>{item.prompt}</h3>
-                      <ol className="mini-options">
-                        {item.options.map((option, optionIndex) => (
-                          <li className={optionIndex === item.answer ? "correct" : ""} key={option}>{String.fromCharCode(65 + optionIndex)}. {option}</li>
-                        ))}
-                      </ol>
-                      <p><strong>Çözüm:</strong> {item.explanation}</p>
-                      <span>{item.sourceTrace}</span>
-                    </article>
-                  ))}
+                  <div className="quiz-score-strip">
+                    <span>
+                      Skor: {Object.keys(miniQuizAnswers).length}/{currentContent.miniQuiz.length} yanıtlandı ·{" "}
+                      {currentContent.miniQuiz.filter((item, index) => miniQuizAnswers[index] === item.answer).length} doğru
+                    </span>
+                    {Object.keys(miniQuizAnswers).length > 0 && (
+                      <button className="button ghost" onClick={() => setMiniQuizAnswers({})} type="button">
+                        Tekrar Dene
+                      </button>
+                    )}
+                  </div>
+                  {currentContent.miniQuiz.map((item, questionIndex) => {
+                    const picked = miniQuizAnswers[questionIndex];
+                    const isAnswered = picked !== undefined;
+                    return (
+                      <article className="mini-question" key={`${item.prompt}-${questionIndex}`}>
+                        <div className="question-meta"><span className="tag">Ders içi mini test</span><span className="tag blue">{questionIndex + 1}/{currentContent.miniQuiz.length}</span></div>
+                        <h3>{item.prompt}</h3>
+                        <div className="options">
+                          {item.options.map((option, optionIndex) => {
+                            const isCorrectOption = optionIndex === item.answer;
+                            const isPickedOption = optionIndex === picked;
+                            const stateClass = !isAnswered ? "" : isCorrectOption ? "correct" : isPickedOption ? "wrong" : "";
+                            return (
+                              <button
+                                className={`option ${stateClass}`}
+                                disabled={isAnswered}
+                                key={option}
+                                onClick={() => setMiniQuizAnswers((current) => ({ ...current, [questionIndex]: optionIndex }))}
+                                type="button"
+                              >
+                                <span className="option-letter">{String.fromCharCode(65 + optionIndex)}</span>
+                                <span>{option}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {isAnswered && (
+                          <div className="solution">
+                            <strong>{picked === item.answer ? "Doğru." : "Yanlış."} Doğru seçenek {String.fromCharCode(65 + item.answer)}.</strong>
+                            <p>{item.explanation}</p>
+                            <p><strong>Kaynak:</strong> {item.sourceTrace}</p>
+                          </div>
+                        )}
+                      </article>
+                    );
+                  })}
                 </section>
               )}
               <div className="top-actions">
@@ -782,6 +853,7 @@ export default function MasakPrepApp() {
               <h2 className="section-title">İlerleme ve Deneme Geçmişi</h2>
               <div className="bar-list">
                 <div className="bar-row"><div className="bar-label"><span>Ders tamamlama</span><span>{completedRatio}%</span></div><div className="bar-track"><div className="bar-fill" style={{ width: `${completedRatio}%` }} /></div></div>
+                <div className="bar-row"><div className="bar-label"><span>Genel doğruluk ({answeredCount} soru çözüldü)</span><span>{accuracy}%</span></div><div className="bar-track"><div className="bar-fill" style={{ width: `${accuracy}%` }} /></div></div>
                 {moduleScores.map((module) => (
                   <div className="bar-row" key={module.id}>
                     <div className="bar-label"><span>{module.shortName} pratik doğruluk ({module.questionCount} soru)</span><span>{module.score}%</span></div>

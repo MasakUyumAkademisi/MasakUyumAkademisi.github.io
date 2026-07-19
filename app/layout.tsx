@@ -23,9 +23,12 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
   },
   icons: {
-    icon: "/favicon.svg",
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
     shortcut: "/favicon.svg",
-    apple: "/app-icon.svg",
+    apple: "/apple-touch-icon.png",
   },
   openGraph: {
     title: "MASAK Sınav Hazırlık",

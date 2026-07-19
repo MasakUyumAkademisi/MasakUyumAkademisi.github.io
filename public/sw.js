@@ -1,5 +1,5 @@
 const CACHE_NAME = "masak-prep-v1";
-const CORE_ASSETS = ["/", "/manifest.webmanifest", "/app-icon.svg", "/favicon.svg", "/offline.html"];
+const CORE_ASSETS = ["/", "/manifest.webmanifest", "/app-icon.svg", "/icon-192.png", "/icon-512.png", "/apple-touch-icon.png", "/favicon.svg", "/offline.html"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
