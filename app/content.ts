@@ -952,6 +952,7 @@ const baseLessonContentById: Record<string, BaseLessonContent> = {
 
 type LessonV4Blueprint = {
   deepDiveTitles: string[];
+  deepDiveNotes: string[];
   tableThemes: string[];
   caseThemes: string[];
   glossary: KeyCard[];
@@ -960,84 +961,214 @@ type LessonV4Blueprint = {
 const lessonV4Blueprints: Record<string, LessonV4Blueprint> = {
   "masak-gorevleri": {
     deepDiveTitles: ["MASAK'ın idari MİB konumu", "Bildirim alma ve analiz döngüsü", "Kurumlar arası bilgi paylaşımı", "Denetim elemanı ve yükümlülük denetimi", "Koordinasyon kurulu ile görev ayrımı"],
+    deepDiveNotes: [
+      "MASAK idari modelde konumlanır: yükümlülerle kolluk/adli makam arasında analiz ve koordinasyon köprüsü kurar. Sınavda MASAK'ı doğrudan soruşturma makamı gibi gösteren seçenekler elenir.",
+      "Bildirim alma, veriyi zenginleştirme, örüntü analizi ve ilgili makama aktarma zinciri tek süreçtir. ŞİB gelmesi otomatik dava veya dondurma anlamına gelmez.",
+      "Bilgi paylaşımı ulusal ve uluslararası düzeyde yapılabilir; ancak paylaşım, yargısal kararın yerine geçmez. Bu ayrım MASAK görevi sorularında ana çeldiricidir.",
+      "Denetim elemanı kavramı yükümlülük denetiminde görevlendirilebilecek denetim kapasitesini ifade eder; sadece MASAK personeline indirgenmez.",
+      "Koordinasyon kurulu politika, eşgüdüm ve strateji işlevi görür. Tekil ŞİB dosyasını yargılayan veya ceza veren kurul gibi düşünülmemelidir.",
+    ],
     tableThemes: ["MASAK, savcılık ve yükümlü ayrımı"],
     caseThemes: ["Şüpheli işlemden adli makama giden analiz zinciri"],
     glossary: [{ term: "İdari MİB", detail: "Bildirim, analiz ve paylaşım merkezli mali istihbarat modeli." }],
   },
   "uluslararasi-standartlar": {
     deepDiveTitles: ["MİB modelleri", "FATF tavsiyelerinin sınav değeri", "Karşılıklı değerlendirme ve etkililik", "Gri liste, kara liste ve takip süreçleri", "Egmont güvenli bilgi ağı", "MONEYVAL ve bölgesel yapılar"],
+    deepDiveNotes: [
+      "MİB modellerinde idari, kolluk, adli/savcılık ve karma yapı ayrılır. İdari model yükümlü güvenini ve finansal analiz uzmanlığını; kolluk modeli hızlı soruşturma refleksini öne çıkarır.",
+      "FATF tavsiyeleri yalnız tavsiye metni gibi okunmaz; ülkelerin teknik uyum ve etkililik değerlendirmesini belirleyen sınav omurgasıdır.",
+      "Karşılıklı değerlendirme iki düzeyde okunur: mevzuat var mı ve fiilen sonuç üretiyor mu. Kağıt üzerindeki düzenleme güçlü olsa bile uygulama zayıfsa etkililik sorunu doğar.",
+      "Gri liste stratejik eksikliklerin artırılmış izleme sürecidir; kara liste daha ağır karşı tedbir riskini çağrıştırır. Listeden çıkış yükümlülüklerin bittiği anlamına gelmez.",
+      "Egmont, MİB'ler arası güvenli bilgi değişimi ağıdır; kolluk teşkilatı değildir. Sınavda Interpol/Europol gibi yapılardan ayrıştırılır.",
+      "MONEYVAL gibi bölgesel yapılar FATF metodolojisini bölgesel izleme ve değerlendirme kapasitesiyle uygular.",
+    ],
     tableThemes: ["MİB modelleri karşılaştırması", "FATF, Egmont ve MONEYVAL ayrımı"],
     caseThemes: ["Teknik uyum var ama etkililik zayıfsa ne olur?"],
     glossary: [{ term: "Etkililik", detail: "Sistemin kağıt üzerinde değil sonuç üretme kapasitesidir." }],
   },
   "ulusal-koordinasyon": {
     deepDiveTitles: ["Ulusal risk değerlendirmesi", "Sektör kırılganlığı", "Strateji belgelerinin yükümlüye etkisi", "KİSYF riskinin ayrı izlenmesi", "ŞİB rehberlerinin risk temelli güncellenmesi"],
+    deepDiveNotes: [
+      "Ulusal risk değerlendirmesi ülke, sektör, ürün, hizmet ve kanal seviyesindeki tehdidi gösterir. Yükümlünün kendi müşteri risk modeli bu üst çerçeveden kopuk kurulamaz.",
+      "Sektör kırılganlığı aynı yükümlülüğün her sektörde aynı yoğunlukta uygulanmayacağını gösterir; yüksek riskli sektörde eğitim, izleme ve ŞİB tetikleyicileri sıkılaşır.",
+      "Strateji belgeleri sınavda teorik belge değil, denetim ve rehber önceliklerini yönlendiren uygulama aracı olarak okunmalıdır.",
+      "KİSYF ayrı izlenir çünkü yayılma finansmanı klasik aklama/TF göstergelerinden farklı liste, yaptırım ve ihracat bağlantıları üretebilir.",
+      "ŞİB rehberleri ulusal risk sonuçlarına göre güncellenir; rehberdeki tipoloji örneği sınırlı liste değil olay okuma yardımcısıdır.",
+    ],
     tableThemes: ["Ulusal risk ve müşteri riski ayrımı"],
     caseThemes: ["Yüksek riskli sektörün uyum programına etkisi"],
     glossary: [{ term: "Sektör kırılganlığı", detail: "Ürün, kanal, müşteri ve ülke risklerinin sektör düzeyindeki görünümü." }],
   },
   aklama: {
     deepDiveTitles: ["Aklama suçunun sınav mantığı", "Yerleştirme aşaması", "Ayrıştırma aşaması", "Bütünleştirme aşaması", "Öncül suç ve malvarlığı değeri", "Tipoloji okuma yöntemi", "Ekonomik makuliyet testi", "Elkoyma ve müsadere bağlantısı", "Önleyici yükümlülük ile suç ayrımı"],
+    deepDiveNotes: [
+      "Aklama sorularında önce malvarlığı değerinin suçtan kaynaklanıp kaynaklanmadığı, sonra bu değerin kaynağının gizlenip gizlenmediği aranır. Salt yüksek tutar veya karmaşıklık tek başına yeterli değildir.",
+      "Yerleştirme aşaması suç gelirinin finansal sisteme ilk girişidir. Nakit yatırma, parçalama, üçüncü kişi hesabı kullanma ve kıymetli maden/kripto alımı bu aşamada karşına çıkar.",
+      "Ayrıştırma aşamasında amaç kaynakla bağın koparılmasıdır. Çok sayıda transfer, farklı ülke/kuruluş, sahte ticaret ve varlık dönüşümü bu aşamanın tipik sinyalidir.",
+      "Bütünleştirme aşaması gelirin meşru varlık gibi ekonomiye dönmesidir. Gayrimenkul, şirket sermayesi, lüks tüketim veya yatırım görünümü sınavda bu aşamaya bağlanır.",
+      "Öncül suç aklamaya konu değeri doğuran suçtur; öncül suç bağlantısı tamamen yoksa TCK 282 düzleminde aklama yorumu zayıflar.",
+      "Tipoloji okurken tek emareye değil emare kümelerine bakılır: müşteri profili, işlem amacı, fon kaynağı, ekonomik makuliyet ve taraf ilişkisi birlikte tartılır.",
+      "Ekonomik makuliyet testi, işlemin müşteri mesleği, gelir düzeyi, şirket faaliyeti ve piyasa davranışıyla uyumlu olup olmadığını sorar.",
+      "Elkoyma geçici koruma, müsadere nihai mülkiyet sonucu, dondurma ise tasarruf kısıtı mantığıyla ayrılır; kavramlar birbirinin yerine kullanılmaz.",
+      "Önleyici yükümlülük ihlali idari/adli yaptırım doğurabilir; bu, kişinin aklama suçunu işlediği anlamına otomatik gelmez.",
+    ],
     tableThemes: ["Aklama aşamaları", "Aklama suçu ve yükümlülük ihlali ayrımı", "Tipoloji göstergeleri"],
     caseThemes: ["Nakitten gayrimenkule giden çok aşamalı yapı", "Paravan şirket ve sahte fatura örüntüsü", "Kripto dönüşümüyle kaynak gizleme"],
     glossary: [{ term: "Öncül suç", detail: "Aklamaya konu malvarlığı değerini doğuran suçtur." }],
   },
   "terorizmin-finansmani": {
     deepDiveTitles: ["TF'de kaynak değil amaç belirleyicidir", "Fon kavramının genişliği", "Yasal kaynaklı fon riski", "Düşük tutarlı transfer örüntüleri", "Dernek ve bağış yapıları", "Malvarlığı dondurma", "BMGK liste mekanizması", "TF ile aklama ayrımı", "Uluslararası yaptırım bağlantısı"],
+    deepDiveNotes: [
+      "TF'de fonun suçtan gelmesi şart değildir; belirleyici unsur fonun terör eylemi, örgütü veya terörist kişiyle amaç bağlantısıdır.",
+      "Fon kavramı para, mal, hak, alacak, kripto değer, hizmet veya ekonomik değeri olan başka unsurları kapsayacak genişlikte düşünülür.",
+      "Yasal kaynaklı maaş, bağış veya ticari gelir de riskli bölge/kişi/amaç bağlantısıyla TF şüphesi doğurabilir.",
+      "Düşük tutarlı transferler tek başına önemsiz görülmemelidir; sık tekrar, çoklu gönderici, ortak alıcı, coğrafi risk ve açıklama tutarsızlığı birlikte okunur.",
+      "Dernek ve bağış yapıları sosyal amaçlı görünse de fon akışının nihai yararlanıcısı ve kullanım amacı izlenmelidir.",
+      "Malvarlığı dondurma, hüküm verilmesini bekleyen müsadere değildir; hızlı tasarruf kısıtı sağlayan önleyici mekanizmadır.",
+      "BMGK liste mekanizması ulusal uygulamayla birleşir; liste kontrolü yalnız müşteri açılışında değil ilişki boyunca sürer.",
+      "Aklamada kaynak suç geliri ve gizleme öne çıkar; TF'de kaynak yasal olabilir ve kullanım amacı öne çıkar.",
+      "Uluslararası yaptırım bağlantısı liste tarama, riskli ülke, muhabirlik ve işlem tarafı kontrollerinde sınav sorusuna dönüşür.",
+    ],
     tableThemes: ["Aklama ve TF karşılaştırması", "Dondurma, müsadere ve elkoyma ayrımı", "TF risk göstergeleri"],
     caseThemes: ["Küçük tutarlı bağışların riskli bölge bağlantısı", "Paravan ticari işletme üzerinden fon aktarımı", "Liste eşleşmesinde hızlı karar ihtiyacı"],
     glossary: [{ term: "Amaç unsuru", detail: "Fonun terör eylemi, örgütü veya bağlantılı kişi için kullanılma hedefidir." }],
   },
   kisyf: {
     deepDiveTitles: ["Yayılma finansmanı riski", "KİSYF'nin TF'den ayrılması", "Liste tarama disiplini", "Gerçek ve hatalı eşleşme", "Dondurma kararının uygulanması", "İstisna ve itiraz mantığı"],
+    deepDiveNotes: [
+      "KİSYF, kitle imha silahlarının geliştirilmesi, temini, taşınması veya yayılmasına finansal destek sağlayan akışları hedefler.",
+      "TF ile benzer yaptırım araçları kullanılsa da risk nesnesi farklıdır: burada terör eylemi değil yayılma programı ve yaptırım rejimi bağlantısı aranır.",
+      "Liste tarama müşteri, temsilci, gerçek faydalanıcı, işlem tarafı ve karşı kurum düzeyinde sürekli yapılmalıdır.",
+      "Hatalı eşleşmede benzer isim nedeniyle işlem durabilir ama araştırma sonucu gerçek eşleşme yoksa süreç kayda alınarak çözümlenir.",
+      "Gerçek eşleşmede tasarruf kısıtı, bildirim ve iç eskalasyon hızlı yürütülür; gecikme yaptırımın amacını boşa çıkarabilir.",
+      "İstisna ve itiraz, dondurmanın tüm sonuçlarını ortadan kaldırmaz; sınırlı izin veya hatalı kayıt düzeltme mantığıyla okunur.",
+    ],
     tableThemes: ["TF ve KİSYF ayrımı", "Liste eşleşmesi karar tablosu"],
     caseThemes: ["Benzer unvanlı tarafla yaptırım listesi eşleşmesi", "Dondurulmuş varlık üzerinde işlem talebi"],
     glossary: [{ term: "PF", detail: "Kitle imha silahlarının yayılmasının finansmanıdır." }],
   },
   sib: {
     deepDiveTitles: ["Şüphe eşiği", "Parasal eşik bulunmaması", "Dahili bildirim akışı", "Uyum görevlisinin değerlendirmesi", "MASAK Online ve ŞİBF mantığı", "Süre ve gecikmesinde sakınca", "Gizlilik ve ihbar yasağı", "Koruma hükümleri", "Ek bildirim", "İşlem ertelemesiyle ilişki"],
+    deepDiveNotes: [
+      "ŞİB kesin delil standardıyla çalışmaz; bilgi, şüphe veya şüpheyi gerektiren husus yeterlidir. Bu nedenle mahkumiyet beklemek bildirim mantığına aykırıdır.",
+      "ŞİB için parasal eşik yoktur; düşük tutarlı ama profil dışı veya bağlantılı işlem de bildirime konu olabilir.",
+      "Dahili bildirim akışında ön personel şüpheyi uyum görevlisine taşır; nihai MASAK bildirimi yetkili yapı tarafından değerlendirilir.",
+      "Uyum görevlisi olayı sadece tek işlem olarak değil müşteri geçmişi, taraflar, açıklamalar ve önceki uyarılarla birlikte analiz eder.",
+      "MASAK Online/ŞİBF, şüphe kategorisi, işlem bilgileri, taraflar ve ek belgelerle bildirim standardını sağlar; form mantığı sadece teknik gönderim değildir.",
+      "Olağan hallerde süre şüphenin oluştuğu tarihten itibaren işler; gecikmesinde sakınca varsa beklemek yerine derhal aksiyon alınır.",
+      "Gizlilik ve ihbar yasağı müşteriye, temsilciye veya üçüncü kişiye bildirim yapıldığını hissettirecek açıklamalardan kaçınmayı gerektirir.",
+      "İyi niyetli bildirim yapanlar korunur; bu koruma, bildirimi müşteriye açıklama veya kötü niyetli bildirim yapma serbestisi değildir.",
+      "Yeni bilgi veya belge sonradan elde edilirse önceki bildirimle bağlantılı ek bildirim mantığı çalışır.",
+      "İşlem ertelemesi ŞİB'in otomatik sonucu değildir; fon kaçırma riski, imtina ve MASAK talimatı ayrıca değerlendirilir.",
+    ],
     tableThemes: ["ŞİB, dahili bildirim ve işlem ertelemesi ayrımı", "Gizlilik, koruma ve ihbar yasağı", "Şüphe göstergesi değerlendirme tablosu"],
     caseThemes: ["Profil dışı parçalı transferler", "Reddedilen işlemde ŞİB değerlendirmesi", "Müşteriye bilgi verme riskinin doğduğu an"],
     glossary: [{ term: "İhbar yasağı", detail: "Bildirim yapıldığının veya yapılacağının ilgili kişilere açıklanmamasıdır." }],
   },
   "islem-ertelemesi": {
     deepDiveTitles: ["Ertelemenin istisnai niteliği", "ŞİB ile otomatik bağ kurulmaması", "MASAK talimatı ve süre", "İmtina ve erteleme ayrımı", "Müşteriye açıklama riski", "Kayıt ve gerekçe"],
+    deepDiveNotes: [
+      "Erteleme istisnai bir koruma aracıdır; her şüpheli işlemde kullanılmaz. Amaç, şüpheli malvarlığının sistem dışına kaçırılmasını önlemektir.",
+      "ŞİB yapılması otomatik olarak işlem ertelemesi doğurmaz; olayda fon çıkışı, telafisi güç zarar veya acil kaçırma riski aranır.",
+      "MASAK talimatı ve süre sınırları yükümlünün keyfi bekletme yapmasını engeller. Yükümlü, kendi başına sınırsız bloke uygulayan taraf gibi davranamaz.",
+      "İmtina, işlemi yapmaktan kaçınmadır; erteleme ise belirli şartlarda işlemin geçici olarak bekletilmesidir. Sınavda bu iki kavram sık karıştırılır.",
+      "Müşteriye 'ŞİB yapacağız' veya 'MASAK'tan cevap bekliyoruz' gibi açıklamalar ihbar riskini doğurur.",
+      "Her karar gerekçeli kayıtla desteklenmelidir; sonradan denetimde hangi bilgiyle hangi aksiyonun seçildiği gösterilebilmelidir.",
+    ],
     tableThemes: ["ŞİB, imtina ve erteleme ayrımı", "Erteleme karar adımları"],
     caseThemes: ["Hızla çıkış yapılacak yüksek riskli transfer", "Şüpheli işlemde müşteriye açıklama baskısı"],
     glossary: [{ term: "İmtina", detail: "Yükümlünün mevzuat gereği işlemi gerçekleştirmekten kaçınmasıdır." }],
   },
   "fintek-riskleri": {
     deepDiveTitles: ["Dijital kanal risk mantığı", "Ödeme ve elektronik para kuruluşları", "Açık bankacılık ve API riski", "KVHS müşteri kabulü", "Kripto transferlerinde seyahat kuralı", "Eksik bilgi gönderen sağlayıcı", "15.000 TL teyit eşiği"],
+    deepDiveNotes: [
+      "Dijital kanal düşük risk anlamına gelmez; hız, uzaktan erişim, anonimleşme, çoklu hesap ve sınır aşan hareket kapasitesi farklı kontrol ihtiyacı doğurur.",
+      "Ödeme ve elektronik para kuruluşlarında müşteri kabulü, cüzdan limiti, işlem hacmi, alıcı-gönderici ilişkisi ve şüpheli örüntü izleme birlikte çalışır.",
+      "Açık bankacılıkta rıza ve API güvenliği AML yükümlülüklerinin yerine geçmez; veri akışı, yetki, kanal ve işlem davranışı ayrıca izlenir.",
+      "KVHS müşteri kabulünde kimlik, gerçek faydalanıcı, transfer tarafı bilgisi ve riskli cüzdan/karşı sağlayıcı bağlantısı dikkate alınır.",
+      "Seyahat kuralı, kripto transferlerinde gönderen ve alıcı bilgilerinin transferle birlikte izlenmesini sağlar; eksik bilgi işlem riskini yükseltir.",
+      "Sürekli eksik veya hatalı bilgi gönderen sağlayıcıyla ilişki sınırlandırma, askıya alma veya sonlandırma gündeme gelebilir.",
+      "15.000 TL teyit eşiği, belirli kripto transferlerinde gönderen bilgilerinin doğruluğunu ayrıca teyit etme refleksi üretir; eşiğin altı otomatik risksiz demek değildir.",
+    ],
     tableThemes: ["Elektronik transfer ve kripto transfer ayrımı", "Dijital ürün riskleri"],
     caseThemes: ["Eksik taraf bilgisiyle gelen kripto transferi", "API kanalında olağan dışı işlem yoğunluğu"],
     glossary: [{ term: "Travel rule", detail: "Transfer taraf bilgilerinin transfer mesajıyla birlikte izlenmesi kuralıdır." }],
   },
   "uyum-yonetimi": {
     deepDiveTitles: ["Uyum programının unsurları", "Yönetim kurulu sorumluluğu", "Uyum görevlisi ve yardımcısı", "Risk yönetimi", "İzleme ve kontrol", "İç denetim", "Eğitim ve kurum politikası", "Finansal grup paylaşımı", "Münhasır görev ve çıkar çatışması", "Lisans, yenileme ve sicil"],
+    deepDiveNotes: [
+      "Uyum programı tek doküman değil, politika, prosedür, risk yönetimi, izleme-kontrol, eğitim ve iç denetimin birlikte işlemesidir.",
+      "Yönetim kurulu gözetim yetkisini devretse bile nihai sorumluluk kurul düzeyinde kalır; sınavda yetki devri-sorumluluk devri ayrımı aranır.",
+      "Uyum görevlisi ve yardımcısı ŞİB değerlendirme, MASAK iletişimi ve uyum programının işleyişinde merkezi aktördür; operasyonel satış hedefleriyle çatışmamalıdır.",
+      "Risk yönetimi müşteriyi, ürünü, ülkeyi, kanalı ve işlemi sınıflandırır; yüksek riskli sınıf daha sık izleme ve ek onay gerektirir.",
+      "İzleme-kontrol günlük/periodik operasyonel kontrollerdir; alarm, senaryo, limit aşımı ve profil dışı işlem takibi bu başlıkta okunur.",
+      "İç denetim sistemin bağımsız testidir; izleme-kontrolün yaptığı işi tekrar etmek değil, tasarım ve işleyiş etkinliğini ölçmek için vardır.",
+      "Eğitim ve kurum politikası personelin şüpheyi fark etmesini sağlar; yalnız e-imza alınmış eğitim kaydı etkinlik kanıtı değildir.",
+      "Finansal grup paylaşımı risk yönetimini destekler; ancak ŞİB yapıldığı bilgisi gizlilik/ihbar yasağı kapsamında ayrıca korunur.",
+      "Münhasır görev kuralı çıkar çatışmasını önler; uyum görevlisinin satış, pazarlama, iç denetim gibi görevlerle aynı anda ilişkilendirilmesi risklidir.",
+      "Lisans, yenileme ve sicil süreçleri süre ve şart sorularına döner; sınavda teknik süreler kadar görevin sona ermesi ve askı/iptal mantığı da aranır.",
+    ],
     tableThemes: ["Risk yönetimi, izleme-kontrol ve iç denetim ayrımı", "Yönetim kurulu ve uyum görevlisi sorumlulukları", "Lisans ve sicil akışı"],
     caseThemes: ["Yetki devrine rağmen yönetim kurulu sorumluluğu", "Grup içi bilgi paylaşımında ŞİB gizliliği", "İzleme raporunun iç denetim bulgusuna dönüşmesi"],
     glossary: [{ term: "Uyum programı", detail: "Politika, risk yönetimi, izleme, eğitim, iç denetim ve bildirim sisteminin bütünüdür." }],
   },
   "denetim-idari-ceza": {
     deepDiveTitles: ["Yükümlülük denetiminin kapsamı", "İdari para cezası mantığı", "Adli ceza riski taşıyan ihlaller", "Ceza tavanı ve yükümlü türü", "Uyarı ve süre verilmesi", "Elektronik tebligat ve yargı yolu"],
+    deepDiveNotes: [
+      "Denetim, yalnız tek işlem dosyası incelemesi değildir; müşteri kabulü, kayıt, eğitim, senaryo, raporlama ve yönetim kurulu gözetimi birlikte incelenir.",
+      "İdari para cezası KYC, ŞİB, devamlı bilgi verme ve uyum programı ihlallerinde farklı mantıklarla uygulanır; yükümlü türü tutarı etkileyebilir.",
+      "Adli ceza riski özellikle ŞİB gizliliği, bilgi-belge verme ve muhafaza-ibraz ihlallerinde öne çıkar. Bu ihlalleri sadece teknik eksiklik gibi görmek yanlıştır.",
+      "Ceza tavanı ve yükümlü türü finansal kuruluşlarda daha ağır sonuç doğurabilir; işlem tutarı ve yıllık üst sınır mantığı birlikte okunur.",
+      "Uyum programı eksikliklerinde uyarı, süre verilmesi ve tekrar eden eksiklikte yaptırım akışı vardır; her eksiklik doğrudan aynı ceza sonucuna gitmez.",
+      "Elektronik tebligat hukuki süreleri başlatır; tebliğ adresinin takip edilmemesi savunma imkanı sağlamaz.",
+    ],
     tableThemes: ["İdari ve adli ceza ayrımı", "İhlal türü ve yaptırım mantığı"],
     caseThemes: ["Kimlik tespiti ihlali ile ŞİB gizliliği ihlali karşılaştırması", "Denetimde bilgi-belge ibraz edilmemesi"],
     glossary: [{ term: "Yükümlülük denetimi", detail: "Kayıt, belge ve sistemlerin AML/CFT mevzuatına uygunluğunun incelenmesidir." }],
   },
   "uzaktan-kimlik": {
     deepDiveTitles: ["Uzaktan kimliğin KYC içindeki yeri", "Belge ve canlılık doğrulaması", "Temsil ve yetki kontrolü", "Fon kaynağı ve işlem amacı", "Yüksek riskte sıkı tedbir"],
+    deepDiveNotes: [
+      "Uzaktan kimlik, yüz yüze kimlik tespitinin dijital alternatifi olarak okunur; KYC yükümlülüğünü hafifleten genel muafiyet değildir.",
+      "Belge ve canlılık doğrulaması kimliğin gerçek kişiye ait olduğunu ve başvurunun gerçek zamanlı yapıldığını gösterir.",
+      "Temsil ve yetki kontrolü özellikle tüzel kişi, yabancı kişi ve vekalet ilişkilerinde önem kazanır; işlem yapanla menfaat sahibi ayrılmalıdır.",
+      "Fon kaynağı, işlem amacı ve tahmini hacim baştan alınırsa sonraki profil dışı hareketler daha sağlıklı yakalanır.",
+      "Risk yükseldiğinde dijital kanal kolaylığı sona ermez ama sıkı tedbir eklenir: ek belge, üst onay, kaynak araştırması ve yoğun izleme gündeme gelir.",
+    ],
     tableThemes: ["Yüz yüze ve uzaktan kimlik ayrımı"],
     caseThemes: ["Yabancı müşteri için uzaktan hesap açılışı"],
     glossary: [{ term: "Canlılık kontrolü", detail: "Kimlik sahibinin gerçek zamanlı ve gerçek kişi olarak doğrulanmasıdır." }],
   },
   "diger-yukumlulukler": {
     deepDiveTitles: ["Devamlı bilgi verme", "Bilgi ve belge verme", "Muhafaza ve ibraz", "Elektronik tebligat", "Erişim sistemi", "Koruma hükümleri"],
+    deepDiveNotes: [
+      "Devamlı bilgi verme, belirli bilgilerin düzenli ve sistematik aktarılmasıdır; ŞİB'i ortadan kaldıran alternatif bildirim yolu değildir.",
+      "Bilgi-belge talebinde özel kanun hükümleri çoğu durumda kaçınma gerekçesi yapılamaz; yetkili talebin kapsamı ve süreleri önemlidir.",
+      "Muhafaza ve ibrazda belge türüne göre başlangıç tarihi değişir. Kimlik belgeleri ilişki bitişinden, işlem belgeleri işlem tarihinden itibaren düşünülür.",
+      "Elektronik tebligat teknik kayıt gibi değil, süre başlatan resmi tebligat aracı gibi okunur.",
+      "Erişim sistemi MASAK'ın yükümlü verisine etkin ulaşmasını destekler; yükümlünün veri kalitesi ve sürekliliği sorumluluğu devam eder.",
+      "Koruma hükümleri iyi niyetli bildirim yapanı korur; bildirim gizliliğini ihlal etmeye veya müşteriye açıklama yapmaya izin vermez.",
+    ],
     tableThemes: ["Bilgi-belge, muhafaza ve ibraz ayrımı"],
     caseThemes: ["Kapanan hesap belgelerinin saklama başlangıcı"],
     glossary: [{ term: "İbraz", detail: "Yetkili makam talep ettiğinde kayıt ve belgelerin sunulmasıdır." }],
   },
   "musterinin-taninmasi": {
     deepDiveTitles: ["Kimlik tespitinin zamanı", "Gerçek faydalanıcı tespiti", "Başkası adına işlem", "Tüzel kişi ve temsil yetkisi", "Sürekli izleme", "Özel dikkat gerektiren işlemler", "Riskli ülke ve KEP/KPEP riski", "Muhabirlik ilişkileri", "Üçüncü tarafa güven", "Basitleştirilmiş tedbir", "Sıkılaştırılmış tedbir", "Elektronik ve kripto transfer bilgileri"],
+    deepDiveNotes: [
+      "Kimlik tespiti işlem veya sürekli iş ilişkisi kurulmadan önce tamamlanır. Gerçek kişilerde teyidi zorunlu bilgilerle alınan ama teyidi zorunlu olmayan bilgiler ayrılır.",
+      "Gerçek faydalanıcı üç aşamalı aranır: %25'i aşan gerçek kişi ortak, nihai kontrol sahibi, bulunamazsa en üst düzey icra yetkilisi.",
+      "Başkası adına işlemde işlemi yapan kişi ile hesabına hareket edilen kişi birlikte değerlendirilir; beyan yoksa ama şüphe varsa yükümlü araştırma yapar.",
+      "Tüzel kişi ve temsil yetkisi MERSİS, ticaret sicili, imza yetkisi ve ortaklık yapısıyla kontrol edilir; yalnız kartvizit veya beyan yeterli değildir.",
+      "Sürekli izleme müşteri kabulünden sonra başlar: profil, gelir, fon kaynağı, beklenen hacim ve fiili işlem davranışı karşılaştırılır.",
+      "Özel dikkat gerektiren işlemler görünürde yasal olsa bile makul ekonomik amaç, taraf ilişkisi ve olağan faaliyetle uyum açısından incelenir.",
+      "Yabancı PEP her zaman yüksek risk kabul edilir; yerli/uluslararası PEP için yükümlünün risk değerlendirmesi belirleyici olur. Görevden ayrılma riski hemen bitirmez.",
+      "Muhabirlik ilişkileri karşı finansal kuruluşun düzenleme, denetim, itibarı ve AML kapasitesi üzerinden değerlendirilir.",
+      "Üçüncü tarafa güven, yükümlünün nihai sorumluluğunu kaldırmaz; dayanak bilgi ve belgelerin erişilebilir olması gerekir.",
+      "Basitleştirilmiş tedbir muafiyet değil kolaylıktır; şüphe, yüksek risk veya uyumsuz profil varsa uygulanamaz.",
+      "Sıkılaştırılmış tedbir üst düzey onay, servet/fon kaynağı araştırması ve daha sıkı izleme gerektirir.",
+      "Elektronik ve kripto transferlerde taraf bilgisi, eksik bilgiye tepki ve karşı sağlayıcı riski KYC'nin işlem izleme ayağıyla birleşir.",
+    ],
     tableThemes: ["Kimlik, temsilci ve gerçek faydalanıcı ayrımı", "SDD ve EDD ayrımı", "Elektronik transfer ve kripto transfer bilgi yükleri"],
     caseThemes: ["Gerçek faydalanıcıyı gizleyen çok ortaklı yapı", "Profil dışı transferlerde sürekli izleme", "Şüphe halinde basitleştirilmiş tedbirin kapanması"],
     glossary: [{ term: "Gerçek faydalanıcı", detail: "Tüzel yapı veya işlem üzerinde nihai kontrolü bulunan gerçek kişidir." }],
@@ -1060,10 +1191,10 @@ function fillTo<T>(items: T[], count: number, makeItem: (index: number) => T) {
 
 function buildDeepDiveSections(lesson: Lesson, base: BaseLessonContent, blueprint: LessonV4Blueprint, target: number): DeepDiveSection[] {
   const titles = fillTo(blueprint.deepDiveTitles, target, (index) => base.reviewCards[index % base.reviewCards.length]?.term ?? `${lesson.title} uygulama noktası ${index + 1}`);
+  const notes = fillTo(blueprint.deepDiveNotes, target, (index) => base.mustKnow[index % base.mustKnow.length]);
   return titles.map((title, index) => ({
     title,
-    body:
-      `${title} başlığı ${lesson.title} dersinde sınavın olay okuma tarafını güçlendirir. ${base.coreNarrative} Aday, bu alt başlıkta kuralı ezberlemekle kalmayıp müşteri profili, işlem amacı, fon kaynağı, yükümlü aksiyonu ve bildirim refleksini birlikte değerlendirmelidir. ${base.mustKnow[index % base.mustKnow.length]}`,
+    body: `${notes[index]} Sınavda bu başlık tanım ezberiyle değil, olayda hangi risk göstergesi doğdu ve yükümlü hangi aksiyonu seçmelidir sorusuyla çözülür.`,
     sourceTrace: base.pdfRange,
   }));
 }

@@ -83,6 +83,7 @@ test("validates expanded lesson and question bank data", () => {
     assert.match(content, /lessonContentById:\s*Record<string,\s*LessonContent>/);
     assert.match(content, /sourceTrace:/);
     assert.match(content, /overview:/);
+    assert.match(content, /deepDiveNotes:/);
     assert.match(content, /deepDiveSections:/);
     assert.match(content, /examSignals:/);
     assert.match(content, /comparisonTables:/);
