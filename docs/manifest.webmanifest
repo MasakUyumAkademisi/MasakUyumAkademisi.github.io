@@ -1,7 +1,7 @@
 {
-  "name": "MASAK Sınav Hazırlık",
-  "short_name": "MASAK Hazırlık",
-  "description": "MASAK uyum görevlisi yetkilendirme sınavı için ders anlatımı, soru çözüm ve deneme prototipi.",
+  "name": "MASAK Uyum Akademisi",
+  "short_name": "MASAK Uyum",
+  "description": "MASAK uyum görevlisi yetkilendirme sınavı için ders, soru çözüm, hafıza kartları ve deneme simülasyonu.",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",

@@ -606,7 +606,7 @@ export default function MasakPrepApp() {
         <div className="topnav-brand">
           <div className="topnav-mark" aria-hidden="true">M</div>
           <div>
-            <p className="topnav-title">MASAK Hazırlık</p>
+            <p className="topnav-title">MASAK Uyum Akademisi</p>
             <p className="topnav-subtitle">Uyum görevlisi yetkilendirme sınavı</p>
           </div>
         </div>

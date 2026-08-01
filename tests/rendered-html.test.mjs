@@ -29,7 +29,7 @@ test("server-renders the MASAK study shell", async () => {
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, /<title>MASAK Sınav Hazırlık<\/title>/i);
+  assert.match(html, /<title>MASAK Uyum Akademisi<\/title>/i);
   assert.match(html, /Adım Adım Çalışma/);
   assert.match(html, /Çalış/);
   assert.match(html, /MASAK Başkanlığı ve Görevleri/);

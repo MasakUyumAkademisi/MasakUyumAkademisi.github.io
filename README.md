@@ -1,6 +1,6 @@
-# MASAK Sınav Hazırlık
+# MASAK Uyum Akademisi
 
-MASAK uyum görevlisi yetkilendirme sınavı için PWA ders anlatımı, soru çözüm, hafıza kartı ve deneme prototipi.
+MASAK uyum görevlisi yetkilendirme sınavı için PWA ders anlatımı, soru çözüm, hafıza kartı ve deneme simülasyonu.
 
 ## Yayın
 

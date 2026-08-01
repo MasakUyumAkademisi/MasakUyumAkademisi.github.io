@@ -13,13 +13,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MASAK Sınav Hazırlık",
+  title: "MASAK Uyum Akademisi",
   description:
-    "MASAK uyum görevlisi yetkilendirme sınavı için ders, soru çözüm ve deneme prototipi.",
+    "MASAK uyum görevlisi yetkilendirme sınavı için ders, soru çözüm, hafıza kartları ve deneme simülasyonu.",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    title: "MASAK Hazırlık",
+    title: "MASAK Uyum",
     statusBarStyle: "default",
   },
   icons: {
@@ -31,16 +31,16 @@ export const metadata: Metadata = {
     apple: "/apple-touch-icon.png",
   },
   openGraph: {
-    title: "MASAK Sınav Hazırlık",
+    title: "MASAK Uyum Akademisi",
     description:
-      "Ders anlatımı, hızlı tekrar kartları ve açıklamalı soru çözümüyle MASAK sınav çalışma prototipi.",
+      "Ders anlatımı, hızlı tekrar kartları ve açıklamalı soru çözümüyle MASAK uyum sınavı çalışma platformu.",
     type: "website",
   },
   twitter: {
     card: "summary",
-    title: "MASAK Sınav Hazırlık",
+    title: "MASAK Uyum Akademisi",
     description:
-      "MASAK uyum görevlisi yetkilendirme sınavı için PWA prototipi.",
+      "MASAK uyum görevlisi yetkilendirme sınavı için PWA çalışma platformu.",
   },
 };
 
