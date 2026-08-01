@@ -23,22 +23,20 @@ async function render() {
   );
 }
 
-test("server-renders the MASAK v4 lesson shell", async () => {
+test("server-renders the MASAK study shell", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
   assert.match(html, /<title>MASAK Sınav Hazırlık<\/title>/i);
-  assert.match(html, /Ana kaynak MASAK_Rehber_12-01-2026\.pdf/);
+  assert.match(html, /Adım Adım Çalışma/);
+  assert.match(html, /Çalış/);
+  assert.match(html, /MASAK Başkanlığı ve Görevleri/);
   assert.match(html, /Sınavda Çıkar/);
-  assert.match(html, /Anlatım/);
-  assert.match(html, /Tablolar/);
-  assert.match(html, /Örnek Olaylar/);
-  assert.match(html, /Kritik Ayrımlar/);
-  assert.match(html, /Sınav Sinyalleri/);
-  assert.match(html, /Hızlı Tekrar/);
-  assert.match(html, /Mini Test/);
+  assert.match(html, /Mutlaka Bil/);
+  assert.match(html, /Soruları Çöz/);
+  assert.match(html, /Hafıza/);
   assert.doesNotMatch(html, /Bugün/);
   assert.doesNotMatch(html, /<h2 class="section-title">Kaynaklar<\/h2>/);
   assert.match(html, /manifest\.webmanifest/);
@@ -59,7 +57,7 @@ test("keeps PWA assets and source attribution available", async () => {
   assert.equal(parsedManifest.display, "standalone");
   assert.equal(parsedManifest.start_url, "/");
   assert.equal(parsedManifest.icons[0].src, "/app-icon.svg");
-  assert.match(serviceWorker, /CACHE_NAME = "masak-prep-v1"/);
+  assert.match(serviceWorker, /CACHE_NAME = "masak-prep-v\d+"/);
   assert.match(serviceWorker, /offline\.html/);
   assert.match(page, /<MasakPrepApp \/>/);
   assert.match(layout, /lang="tr"/);
@@ -67,11 +65,9 @@ test("keeps PWA assets and source attribution available", async () => {
   assert.match(component, /masak-prep-progress-v2/);
   assert.match(component, /masak-prep-theme/);
   assert.match(component, /theme-toggle/);
-  assert.match(component, /lesson-tab-caption/);
-  assert.match(component, /Kuralı öğren/);
-  assert.match(component, /Ayrımı netleştir/);
-  assert.match(component, /lesson-tab-step/);
-  assert.match(component, /currentTabGuide/);
+  assert.match(component, /MemoryLab/);
+  assert.match(component, /studyPhase/);
+  assert.match(component, /beginLessonQuestions/);
   assert.doesNotMatch(component, /SkeletonPreview|codex-preview/);
 });
 
@@ -103,6 +99,7 @@ test("validates expanded lesson and question bank data", () => {
     assert.match(content, /confusions:/);
     assert.match(content, /legalAnchors:/);
     assert.match(content, /reviewCards:/);
+    assert.doesNotMatch(content, /KnowledgeNode|knowledgeNodes|getKnowledgeNodeByLessonId/);
 
     const lessonContentEntries = [...content.matchAll(/pdfRange:\s*"MASAK_Rehber/g)];
     assert.equal(lessonContentEntries.length, 14);
@@ -119,7 +116,8 @@ test("validates expanded lesson and question bank data", () => {
     assert.equal(mod1.reduce((sum, match) => sum + Number(match[2]), 0), 60);
     assert.equal(mod2.reduce((sum, match) => sum + Number(match[2]), 0), 60);
     assert.match(content, /options,\n\s*answer,/);
-    assert.match(content, /trapNote:\s*lesson\.confusion/);
+    assert.match(content, /authoredQuestionsByLessonId/);
+    assert.match(content, /trapNote:\s*item\.trapNote/);
     assert.match(content, /sourceRef:\s*lesson\.sourceRef/);
   });
 });

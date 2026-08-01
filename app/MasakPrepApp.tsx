@@ -13,11 +13,12 @@ import {
   type ModuleId,
   type Question,
 } from "./content";
+import MemoryLab from "./MemoryLab";
 
-type ViewId = "lessons" | "practice" | "exam" | "progress";
+type ViewId = "study" | "exam" | "memory" | "progress";
 type ExamMode = ModuleId | "mixed";
 type AnswerMap = Record<string, number>;
-type LessonTabId = "narrative" | "tables" | "cases" | "pitfalls" | "quiz";
+type StudyPhase = "lesson" | "questions" | "done";
 type ThemeMode = "light" | "dark";
 
 type ExamResult = {
@@ -57,63 +58,27 @@ type ProgressState = {
 };
 
 const navItems: { id: ViewId; label: string; icon: string }[] = [
-  { id: "lessons", label: "Dersler", icon: "D" },
-  { id: "practice", label: "Soru Çöz", icon: "S" },
+  { id: "study", label: "Çalış", icon: "Ç" },
   { id: "exam", label: "Deneme", icon: "T" },
-  { id: "progress", label: "İlerleme", icon: "I" },
+  { id: "memory", label: "Hafıza", icon: "H" },
+  { id: "progress", label: "İlerleme", icon: "İ" },
 ];
-
-const lessonTabs: { id: LessonTabId; label: string }[] = [
-  { id: "narrative", label: "Anlatım" },
-  { id: "tables", label: "Tablolar" },
-  { id: "cases", label: "Örnek Olaylar" },
-  { id: "pitfalls", label: "Kritik Ayrımlar" },
-  { id: "quiz", label: "Mini Test" },
-];
-
-const lessonTabGuides: Record<LessonTabId, { step: string; title: string; helper: string }> = {
-  narrative: {
-    step: "1",
-    title: "Kuralı öğren",
-    helper: "Tanım ezberi yerine olayda hangi risk göstergesinin doğduğunu takip et.",
-  },
-  tables: {
-    step: "2",
-    title: "Ayrımı netleştir",
-    helper: "Benzer kavramları yan yana karşılaştır; sınav çeldiricileri genelde buradan gelir.",
-  },
-  cases: {
-    step: "3",
-    title: "Olaya uygula",
-    helper: "Önce tarafları ve işlem amacını bul, sonra yükümlünün doğru aksiyonunu seç.",
-  },
-  pitfalls: {
-    step: "4",
-    title: "Hata payını azalt",
-    helper: "Yanlış seçeneklerin neden cazip göründüğünü öğren; kısa tekrarını buradan yap.",
-  },
-  quiz: {
-    step: "5",
-    title: "Kendini ölç",
-    helper: "Cevaplamadan önce gerekçeni kur; çözüm açıklamasını sonra kontrol et.",
-  },
-};
 
 const viewCopy: Record<ViewId, { eyebrow: string; title: string; subtitle: string }> = {
-  lessons: {
-    eyebrow: "Resmi Konu Dağılımı",
-    title: "Dersler",
-    subtitle: "Ana kaynak MASAK_Rehber_12-01-2026.pdf temel alınarak önceliklendirilmiş çalışma notları.",
-  },
-  practice: {
-    eyebrow: "Açıklamalı Soru Çözümü",
-    title: "Soru Çöz",
-    subtitle: "Anında geri bildirim, çeldirici notu ve kaynak atfıyla çalış.",
+  study: {
+    eyebrow: "Adım Adım Çalışma",
+    title: "Çalış",
+    subtitle: "Önce dersi oku, sonra o dersin sorularını çöz. Bitirince otomatik olarak bir sonraki derse geçersin.",
   },
   exam: {
     eyebrow: "Süreli Simülasyon",
     title: "Deneme",
     subtitle: "50 soru, 45 dakika, boş/işaretli soru takibi ve resmi başarı kriteri.",
+  },
+  memory: {
+    eyebrow: "Doping Hafıza Teknikleri",
+    title: "Hafıza",
+    subtitle: "Aralıklı tekrar, mnemonikler, hafıza sarayı ve aktif hatırlama ile kalıcı öğrenme.",
   },
   progress: {
     eyebrow: "Performans",
@@ -239,26 +204,31 @@ function scoreExam(session: ExamSession): ExamResult {
 }
 
 export default function MasakPrepApp() {
-  const [activeView, setActiveView] = useState<ViewId>("lessons");
-  const [activeModule, setActiveModule] = useState<ModuleId>("mod1");
-  const [activeLesson, setActiveLesson] = useState(lessons[0].id);
-  const [activeQuestion, setActiveQuestion] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
-  const [activeLessonTab, setActiveLessonTab] = useState<LessonTabId>("narrative");
+  const [activeView, setActiveView] = useState<ViewId>("study");
+  const [studyLessonId, setStudyLessonId] = useState(lessons[0].id);
+  const [studyPhase, setStudyPhase] = useState<StudyPhase>("lesson");
+  const [studyQIndex, setStudyQIndex] = useState(0);
+  const [studyAnswer, setStudyAnswer] = useState<number | null>(null);
+  const [studyScore, setStudyScore] = useState({ correct: 0, total: 0 });
+  const [studyExpanded, setStudyExpanded] = useState(false);
+  const [showLessonPicker, setShowLessonPicker] = useState(false);
   const [progress, setProgress] = useState<ProgressState>(defaultProgress);
   const [examSession, setExamSession] = useState<ExamSession | null>(null);
   const [lastResult, setLastResult] = useState<ExamResult | null>(null);
-  const [miniQuizAnswers, setMiniQuizAnswers] = useState<Record<number, number>>({});
   const [flippedTerms, setFlippedTerms] = useState<string[]>([]);
   const [theme, setTheme] = useState<ThemeMode>("light");
 
   useEffect(() => {
     // Hydrate from localStorage after mount (SSR-safe: server and first client
     // render both use defaultProgress, so this intentionally updates state
-    // once the real external-store value is available).
+    // once the real external-store value is available). Resume study at the
+    // first lesson the learner hasn't completed yet.
+    const loadedProgress = loadProgress();
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setProgress(loadProgress());
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setProgress(loadedProgress);
+    const resumeLesson =
+      lessons.find((lesson) => !loadedProgress.completedLessons.includes(lesson.id)) ?? lessons[lessons.length - 1];
+    setStudyLessonId(resumeLesson.id);
     setTheme(loadTheme());
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("/sw.js").catch(() => undefined);
@@ -300,11 +270,14 @@ export default function MasakPrepApp() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [examSession?.status, examSession?.remainingSeconds]);
 
-  const currentLesson = getLessonById(activeLesson);
-  const currentContent = lessonContentById[currentLesson.id];
-  const currentTabGuide = lessonTabGuides[activeLessonTab];
-  const filteredLessons = lessons.filter((lesson) => lesson.moduleId === activeModule);
-  const currentQuestion = questions[activeQuestion];
+  const studyLesson = getLessonById(studyLessonId);
+  const studyContent = lessonContentById[studyLesson.id];
+  const studyIndex = lessons.findIndex((lesson) => lesson.id === studyLesson.id);
+  const lessonQuestions = useMemo(
+    () => questions.filter((question) => question.topicId === studyLesson.id),
+    [studyLesson.id],
+  );
+  const studyQuestion = lessonQuestions[studyQIndex];
   const answeredCount = Object.keys(progress.answered).length;
   const correctCount = Object.values(progress.answered).filter(Boolean).length;
   const accuracy = answeredCount ? Math.round((correctCount / answeredCount) * 100) : 0;
@@ -339,43 +312,77 @@ export default function MasakPrepApp() {
     window.localStorage.setItem("masak-prep-theme", nextTheme);
   }
 
-  function completeLesson() {
-    setProgress((current) => {
-      if (current.completedLessons.includes(currentLesson.id)) {
-        return current;
-      }
-
-      return {
-        ...current,
-        completedLessons: [...current.completedLessons, currentLesson.id],
-        lastSession: `${currentLesson.title} tamamlandı`,
-      };
-    });
+  function beginLessonQuestions() {
+    setStudyQIndex(0);
+    setStudyAnswer(null);
+    setStudyScore({ correct: 0, total: 0 });
+    setStudyPhase("questions");
   }
 
-  function answerQuestion(index: number) {
-    if (selectedAnswer !== null) {
+  function answerStudyQuestion(index: number) {
+    if (studyAnswer !== null || !studyQuestion) {
       return;
     }
 
-    const isCorrect = index === currentQuestion.answer;
-    setSelectedAnswer(index);
+    const isCorrect = index === studyQuestion.answer;
+    setStudyAnswer(index);
+    setStudyScore((current) => ({
+      correct: current.correct + (isCorrect ? 1 : 0),
+      total: current.total + 1,
+    }));
     setProgress((current) => ({
       ...current,
-      answered: { ...current.answered, [currentQuestion.id]: isCorrect },
+      answered: { ...current.answered, [studyQuestion.id]: isCorrect },
       weakTags: isCorrect
         ? current.weakTags
         : {
             ...current.weakTags,
-            [currentQuestion.topicId]: (current.weakTags[currentQuestion.topicId] ?? 0) + 1,
+            [studyQuestion.topicId]: (current.weakTags[studyQuestion.topicId] ?? 0) + 1,
           },
-      lastSession: `${currentQuestion.sourceRef}: ${isCorrect ? "doğru" : "tekrar gerekli"}`,
+      lastSession: `${studyQuestion.sourceRef}: ${isCorrect ? "doğru" : "tekrar gerekli"}`,
     }));
   }
 
-  function nextQuestion() {
-    setSelectedAnswer(null);
-    setActiveQuestion((current) => (current + 1) % questions.length);
+  function nextStudyQuestion() {
+    if (studyQIndex + 1 >= lessonQuestions.length) {
+      setProgress((current) =>
+        current.completedLessons.includes(studyLesson.id)
+          ? current
+          : {
+              ...current,
+              completedLessons: [...current.completedLessons, studyLesson.id],
+              lastSession: `${studyLesson.title} tamamlandı`,
+            },
+      );
+      setStudyPhase("done");
+      return;
+    }
+    setStudyQIndex((current) => current + 1);
+    setStudyAnswer(null);
+  }
+
+  function retryLessonQuestions() {
+    setStudyQIndex(0);
+    setStudyAnswer(null);
+    setStudyScore({ correct: 0, total: 0 });
+    setStudyPhase("questions");
+  }
+
+  function goToLesson(lessonId: string) {
+    setStudyLessonId(lessonId);
+    setStudyPhase("lesson");
+    setStudyExpanded(false);
+    setShowLessonPicker(false);
+  }
+
+  function goToNextLesson() {
+    const next = lessons[studyIndex + 1];
+    if (next) {
+      goToLesson(next.id);
+    } else {
+      setStudyPhase("lesson");
+      setStudyExpanded(false);
+    }
   }
 
   function startExam(mode: ExamMode) {
@@ -640,308 +647,202 @@ export default function MasakPrepApp() {
           </div>
         </header>
 
-        {activeView === "lessons" && (
-          <section className="lesson-grid">
-            <div className="panel panel-inner">
-              <div className="section-head">
-                <div>
-                  <h2 className="section-title">Modüller</h2>
-                  <p className="section-subtitle">Ana kaynak: MASAK_Rehber_12-01-2026.pdf</p>
+        {activeView === "study" && (
+          <section className="study-shell">
+            <div className="panel panel-inner study-progress-card">
+              <div className="study-progress-head">
+                <span className="status-pill">Ders {studyIndex + 1} / {lessons.length}</span>
+                <span className="study-progress-note">{progress.completedLessons.length} ders tamamlandı</span>
+              </div>
+              <div className="study-progress-track">
+                <div className="study-progress-fill" style={{ width: `${completedRatio}%` }} />
+              </div>
+              <button
+                className="button ghost study-picker-toggle"
+                onClick={() => setShowLessonPicker((current) => !current)}
+                type="button"
+              >
+                {showLessonPicker ? "Ders listesini gizle" : "Başka bir ders seç"}
+              </button>
+              {showLessonPicker && (
+                <div className="lesson-picker-list">
+                  {lessons.map((lesson) => (
+                    <button
+                      className={`lesson-picker-row ${lesson.id === studyLesson.id ? "active" : ""}`}
+                      key={lesson.id}
+                      onClick={() => goToLesson(lesson.id)}
+                      type="button"
+                    >
+                      <span className="lesson-picker-check" aria-hidden="true">
+                        {progress.completedLessons.includes(lesson.id) ? "✓" : lesson.order}
+                      </span>
+                      <span className="lesson-picker-title">{lesson.title}</span>
+                      <span className="tag">{getModuleById(lesson.moduleId).shortName}</span>
+                    </button>
+                  ))}
                 </div>
-                <span className="status-pill">{completedRatio}%</span>
-              </div>
-              <div className="module-list">
-                {modules.map((module) => (
-                  <button
-                    className={`module-button ${activeModule === module.id ? "active" : ""}`}
-                    aria-pressed={activeModule === module.id}
-                    key={module.id}
-                    onClick={() => {
-                      setActiveModule(module.id);
-                      setActiveLesson(lessons.find((lesson) => lesson.moduleId === module.id)?.id ?? lessons[0].id);
-                      setActiveLessonTab("narrative");
-                      setMiniQuizAnswers({});
-                      setFlippedTerms([]);
-                    }}
-                    type="button"
-                  >
-                    <strong>{module.name}</strong>
-                    <span className="module-meta">
-                      {lessons.filter((lesson) => lesson.moduleId === module.id).reduce((sum, lesson) => sum + lesson.officialQuestionCount, 0)} resmi soru ağırlığı
-                    </span>
-                  </button>
-                ))}
-              </div>
-              <div className="lesson-list">
-                {filteredLessons.map((lesson) => (
-                  <button
-                    aria-label={`${lesson.order}. ${lesson.title}. Resmi ağırlık: ${lesson.officialQuestionCount} soru`}
-                    aria-pressed={activeLesson === lesson.id}
-                    className={`lesson-button ${activeLesson === lesson.id ? "active" : ""}`}
-                    key={lesson.id}
-                    onClick={() => { setActiveLesson(lesson.id); setActiveLessonTab("narrative"); setMiniQuizAnswers({}); setFlippedTerms([]); }}
-                    type="button"
-                  >
-                    <strong>{lesson.order}. {lesson.title}</strong>
-                    <span className="lesson-meta">Resmi ağırlık: {lesson.officialQuestionCount} soru</span>
-                  </button>
-                ))}
-              </div>
+              )}
             </div>
 
-            <article className="panel panel-inner lesson-body">
-              <div>
-                <p className="eyebrow">{getModuleById(currentLesson.moduleId).shortName}</p>
-                <h2 className="section-title">{currentLesson.title}</h2>
-                <p className="lesson-lead">{currentLesson.summary}</p>
-              </div>
-              <div className="lesson-stat-strip">
-                <div><strong>{currentLesson.officialQuestionCount}</strong><span>Resmi ağırlık</span></div>
-                <div><strong>{currentContent.estimatedMinutes} dk</strong><span>Çalışma süresi</span></div>
-                <div><strong>{progress.completedLessons.includes(currentLesson.id) ? "Tamam" : "Açık"}</strong><span>Ders durumu</span></div>
-              </div>
-              <div className="callout focus-callout"><p className="callout-title">Sınavda Çıkar</p><p>{currentContent.examFocus}</p></div>
-              <section className="narrative-block lesson-overview">
-                <h3>Özet</h3>
-                <p>{currentContent.overview}</p>
-                <span>{currentContent.sourceTrace}</span>
-              </section>
-              <nav className="lesson-tab-list" aria-label="Ders bölümleri">
-                {lessonTabs.map((tab) => (
-                  <button
-                    aria-pressed={activeLessonTab === tab.id}
-                    className={activeLessonTab === tab.id ? "active" : ""}
-                    key={tab.id}
-                    onClick={() => setActiveLessonTab(tab.id)}
-                    type="button"
-                  >
-                    <span className="lesson-tab-step">{lessonTabGuides[tab.id].step}</span>
-                    {tab.label}
-                  </button>
-                ))}
-              </nav>
-              <p className="lesson-tab-caption">
-                <strong>{currentTabGuide.title}.</strong> {currentTabGuide.helper}
-              </p>
-
-              {activeLessonTab === "narrative" && (
-                <section className="lesson-tab-panel">
-                  <div className="lesson-detail-grid priority-grid">
-                    <section className="detail-block">
-                      <h3>Sınav Sinyalleri</h3>
-                      <ul>{currentContent.examSignals.map((item) => <li key={item}>{item}</li>)}</ul>
-                    </section>
-                    <section className="detail-block">
-                      <h3>Mutlaka Bil</h3>
-                      <ul>{currentContent.mustKnow.map((item) => <li key={item}>{item}</li>)}</ul>
-                    </section>
-                  </div>
-                  <div className="deep-dive-list">
-                    {currentContent.deepDiveSections.map((section, sectionIndex) => (
-                      <section className="content-section" key={section.title}>
-                        <div className="content-section-head">
-                          <span>{sectionIndex + 1}</span>
-                          <h3>{section.title}</h3>
-                        </div>
-                        <p>{section.body}</p>
-                        <span>{section.sourceTrace}</span>
-                      </section>
-                    ))}
-                  </div>
-                  <section className="review-section">
-                    <div className="section-head">
-                      <h3>Hızlı Tekrar</h3>
-                      <span className="hint-text">Önce hatırlamayı deneyin, sonra karta tıklayıp kontrol edin</span>
-                    </div>
-                    <div className="card-grid">
-                      {currentContent.glossary.map((card) => {
-                        const isFlipped = flippedTerms.includes(card.term);
-                        return (
-                          <button
-                            className={`study-card flip-card ${isFlipped ? "flipped" : ""}`}
-                            key={card.term}
-                            onClick={() =>
-                              setFlippedTerms((current) =>
-                                current.includes(card.term) ? current.filter((term) => term !== card.term) : [...current, card.term],
-                              )
-                            }
-                            type="button"
-                          >
-                            <span className="study-card-term">{card.term}</span>
-                            <span className="study-card-detail">{isFlipped ? card.detail : "Tanımı görmek için dokunun"}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </section>
+            {studyPhase === "lesson" && (
+              <article className="panel panel-inner study-lesson-card">
+                <p className="eyebrow">{getModuleById(studyLesson.moduleId).shortName}</p>
+                <h2 className="page-title study-title">{studyLesson.title}</h2>
+                <p className="study-lead">{studyLesson.summary}</p>
+                <section className="study-mustknow study-narrative">
+                  <h3>Konu Anlatımı</h3>
+                  <p>{studyContent.coreNarrative}</p>
                 </section>
-              )}
+                <div className="callout focus-callout">
+                  <p className="callout-title">Sınavda Çıkar</p>
+                  <p>{studyContent.examFocus}</p>
+                </div>
+                <section className="study-mustknow">
+                  <h3>Mutlaka Bil</h3>
+                  <ul>{studyContent.mustKnow.map((item) => <li key={item}>{item}</li>)}</ul>
+                </section>
 
-              {activeLessonTab === "tables" && (
-                <section className="lesson-tab-panel table-stack">
-                  {currentContent.comparisonTables.map((table) => (
-                    <div className="table-card" key={table.title}>
-                      <div className="table-card-head"><h3>{table.title}</h3><span>{table.sourceTrace}</span></div>
-                      <div className="table-scroll">
-                        <table className="comparison-table">
-                          <thead><tr>{table.columns.map((column) => <th key={column}>{column}</th>)}</tr></thead>
-                          <tbody>
-                            {table.rows.map((row) => (
-                              <tr key={row.join("|")}>{row.map((cell) => <td key={cell}>{cell}</td>)}</tr>
-                            ))}
-                          </tbody>
-                        </table>
+                {studyExpanded && (
+                  <>
+                    <section className="review-section">
+                      <div className="section-head">
+                        <h3>Derinlemesine</h3>
+                        <span className="hint-text">Sınavda bu ayrımlar çeldirici olarak kullanılır</span>
                       </div>
-                    </div>
-                  ))}
-                </section>
-              )}
-
-              {activeLessonTab === "cases" && (
-                <section className="lesson-tab-panel case-grid">
-                  {currentContent.caseStudies.map((item) => (
-                    <article className="case-card" key={item.title}>
-                      <h3>{item.title}</h3>
-                      <p><strong>Olay:</strong> {item.facts}</p>
-                      <p><strong>Çözüm:</strong> {item.analysis}</p>
-                      <p><strong>Sınav notu:</strong> {item.takeaway}</p>
-                      <span>{item.sourceTrace}</span>
-                    </article>
-                  ))}
-                </section>
-              )}
-
-              {activeLessonTab === "pitfalls" && (
-                <section className="lesson-tab-panel">
-                  <div className="lesson-detail-grid priority-grid">
-                    <section className="detail-block">
-                      <h3>Kritik Ayrımlar</h3>
-                      <ul>{currentContent.pitfalls.map((item) => <li key={item}>{item}</li>)}</ul>
-                    </section>
-                    <section className="detail-block">
-                      <h3>Mevzuat Dayanakları</h3>
-                      <ul>{currentContent.legalAnchors.map((item) => <li key={item}>{item}</li>)}</ul>
-                    </section>
-                  </div>
-                </section>
-              )}
-
-              {activeLessonTab === "quiz" && (
-                <section className="lesson-tab-panel quiz-list">
-                  <div className="quiz-score-strip">
-                    <span>
-                      Skor: {Object.keys(miniQuizAnswers).length}/{currentContent.miniQuiz.length} yanıtlandı ·{" "}
-                      {currentContent.miniQuiz.filter((item, index) => miniQuizAnswers[index] === item.answer).length} doğru
-                    </span>
-                    {Object.keys(miniQuizAnswers).length > 0 && (
-                      <button className="button ghost" onClick={() => setMiniQuizAnswers({})} type="button">
-                        Tekrar Dene
-                      </button>
-                    )}
-                  </div>
-                  {currentContent.miniQuiz.map((item, questionIndex) => {
-                    const picked = miniQuizAnswers[questionIndex];
-                    const isAnswered = picked !== undefined;
-                    return (
-                      <article className="mini-question" key={`${item.prompt}-${questionIndex}`}>
-                        <div className="question-meta"><span className="tag">Ders içi mini test</span><span className="tag blue">{questionIndex + 1}/{currentContent.miniQuiz.length}</span></div>
-                        <h3>{item.prompt}</h3>
-                        <div className="options">
-                          {item.options.map((option, optionIndex) => {
-                            const isCorrectOption = optionIndex === item.answer;
-                            const isPickedOption = optionIndex === picked;
-                            const stateClass = !isAnswered ? "" : isCorrectOption ? "correct" : isPickedOption ? "wrong" : "";
-                            return (
-                              <button
-                                className={`option ${stateClass}`}
-                                disabled={isAnswered}
-                                key={option}
-                                onClick={() => setMiniQuizAnswers((current) => ({ ...current, [questionIndex]: optionIndex }))}
-                                type="button"
-                              >
-                                <span className="option-letter">{String.fromCharCode(65 + optionIndex)}</span>
-                                <span>{option}</span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                        {isAnswered && (
-                          <div className="solution">
-                            <strong>{picked === item.answer ? "Doğru." : "Yanlış."} Doğru seçenek {String.fromCharCode(65 + item.answer)}.</strong>
-                            <p>{item.explanation}</p>
-                            <p><strong>Kaynak:</strong> {item.sourceTrace}</p>
+                      <div className="deepdive-list">
+                        {studyContent.deepDiveSections.map((section) => (
+                          <div className="deepdive-item" key={section.title}>
+                            <p className="deepdive-title">{section.title}</p>
+                            <p className="deepdive-body">{section.body}</p>
                           </div>
-                        )}
-                      </article>
-                    );
-                  })}
-                </section>
-              )}
-              <div className="top-actions">
-                <button className="button primary" onClick={completeLesson} type="button">Dersi Tamamla</button>
+                        ))}
+                      </div>
+                    </section>
+                    <section className="study-mustknow">
+                      <h3>Kritik Ayrımlar</h3>
+                      <ul>{studyContent.pitfalls.map((item) => <li key={item}>{item}</li>)}</ul>
+                    </section>
+                    <section className="review-section">
+                      <div className="section-head">
+                        <h3>Hızlı Tekrar Kartları</h3>
+                        <span className="hint-text">Önce hatırlamayı deneyin, sonra karta dokunup kontrol edin</span>
+                      </div>
+                      <div className="card-grid">
+                        {studyContent.glossary.map((card) => {
+                          const isFlipped = flippedTerms.includes(card.term);
+                          return (
+                            <button
+                              className={`study-card flip-card ${isFlipped ? "flipped" : ""}`}
+                              key={card.term}
+                              onClick={() =>
+                                setFlippedTerms((current) =>
+                                  current.includes(card.term) ? current.filter((term) => term !== card.term) : [...current, card.term],
+                                )
+                              }
+                              type="button"
+                            >
+                              <span className="study-card-term">{card.term}</span>
+                              <span className="study-card-detail">{isFlipped ? card.detail : "Tanımı görmek için dokunun"}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  </>
+                )}
+
                 <button
-                  className="button"
-                  onClick={() => {
-                    const index = questions.findIndex((question) => question.topicId === currentLesson.id);
-                    setActiveQuestion(index >= 0 ? index : 0);
-                    setSelectedAnswer(null);
-                    setActiveView("practice");
-                  }}
+                  className="button ghost study-toggle"
+                  onClick={() => setStudyExpanded((current) => !current)}
                   type="button"
                 >
-                  Mini Test
+                  {studyExpanded ? "Daha az göster" : "Daha fazla detay göster"}
                 </button>
-              </div>
-            </article>
-          </section>
-        )}
 
-        {activeView === "practice" && (
-          <section className="practice-grid">
-            <div className="panel panel-inner question-card">
-              <div className="question-meta">
-                <span className="tag">{getModuleById(currentQuestion.moduleId).shortName}</span>
-                <span className="tag blue">{currentQuestion.difficulty}</span>
-                <span className="tag">{getLessonById(currentQuestion.topicId).title}</span>
-              </div>
-              <p className="question-text">{currentQuestion.prompt}</p>
-              <div className="options">
-                {currentQuestion.options.map((option, index) => {
-                  const isCorrect = index === currentQuestion.answer;
-                  const isSelected = selectedAnswer === index;
-                  const stateClass = selectedAnswer === null ? "" : isCorrect ? "correct" : isSelected ? "wrong" : "";
-                  return (
-                    <button className={`option ${isSelected ? "selected" : ""} ${stateClass}`} disabled={selectedAnswer !== null} key={option} onClick={() => answerQuestion(index)} type="button">
-                      <span className="option-letter">{String.fromCharCode(65 + index)}</span>
-                      <span>{option}</span>
-                    </button>
-                  );
-                })}
-              </div>
-              {selectedAnswer !== null && (
-                <div className="solution">
-                  <strong>{selectedAnswer === currentQuestion.answer ? "Doğru cevap." : "Yanlış cevap."} Doğru seçenek {String.fromCharCode(65 + currentQuestion.answer)}.</strong>
-                  <p>{currentQuestion.explanation}</p>
-                  <p><strong>Çeldirici:</strong> {currentQuestion.trapNote}</p>
-                  <p><strong>Kaynak:</strong> {currentQuestion.sourceRef}</p>
+                <button className="button primary study-cta" onClick={beginLessonQuestions} type="button">
+                  Soruları Çöz ({lessonQuestions.length} soru) →
+                </button>
+              </article>
+            )}
+
+            {studyPhase === "questions" && studyQuestion && (
+              <article className="panel panel-inner study-question-card">
+                <div className="question-meta">
+                  <span className="tag">{studyLesson.title}</span>
+                  <span className="tag blue">Soru {studyQIndex + 1} / {lessonQuestions.length}</span>
                 </div>
-              )}
-              <div className="top-actions">
-                <button className="button" onClick={nextQuestion} type="button">Sonraki Soru</button>
-                <button className="button ghost" onClick={() => setSelectedAnswer(null)} type="button">Cevabı Temizle</button>
-              </div>
-            </div>
-            <aside className="panel panel-inner">
-              <h2 className="section-title">Soru Bankası</h2>
-              <div className="metric-grid" style={{ gridTemplateColumns: "1fr" }}>
-                <div className="metric"><p className="metric-value">{questions.length}</p><p className="metric-label">Toplam özgün soru</p></div>
-                <div className="metric"><p className="metric-value">{answeredCount}</p><p className="metric-label">Çözülen pratik soru</p></div>
-              </div>
-            </aside>
+                <p className="question-text">{studyQuestion.prompt}</p>
+                <div className="options">
+                  {studyQuestion.options.map((option, index) => {
+                    const isCorrect = index === studyQuestion.answer;
+                    const isSelected = studyAnswer === index;
+                    const stateClass = studyAnswer === null ? "" : isCorrect ? "correct" : isSelected ? "wrong" : "";
+                    return (
+                      <button
+                        className={`option ${isSelected ? "selected" : ""} ${stateClass}`}
+                        disabled={studyAnswer !== null}
+                        key={option}
+                        onClick={() => answerStudyQuestion(index)}
+                        type="button"
+                      >
+                        <span className="option-letter">{String.fromCharCode(65 + index)}</span>
+                        <span>{option}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {studyAnswer !== null && (
+                  <div className="solution">
+                    <strong>
+                      {studyAnswer === studyQuestion.answer ? "Doğru cevap." : "Yanlış cevap."} Doğru seçenek{" "}
+                      {String.fromCharCode(65 + studyQuestion.answer)}.
+                    </strong>
+                    <p>{studyQuestion.explanation}</p>
+                    <p><strong>Çeldirici:</strong> {studyQuestion.trapNote}</p>
+                  </div>
+                )}
+                <div className="top-actions">
+                  <button
+                    className="button primary study-cta"
+                    disabled={studyAnswer === null}
+                    onClick={nextStudyQuestion}
+                    type="button"
+                  >
+                    {studyQIndex + 1 >= lessonQuestions.length ? "Dersi Bitir →" : "Sonraki Soru →"}
+                  </button>
+                </div>
+              </article>
+            )}
+
+            {studyPhase === "done" && (
+              <article className="panel panel-inner study-done-card">
+                <p className="eyebrow">Tebrikler</p>
+                <h2 className="page-title">{studyLesson.title} tamamlandı</h2>
+                <p className="study-lead">
+                  {studyScore.total} sorudan {studyScore.correct} tanesini doğru cevapladınız.
+                </p>
+                <div className="top-actions study-done-actions">
+                  <button className="button ghost" onClick={retryLessonQuestions} type="button">
+                    Bu Dersi Tekrar Çöz
+                  </button>
+                  {studyIndex + 1 < lessons.length ? (
+                    <button className="button primary study-cta" onClick={goToNextLesson} type="button">
+                      Sonraki Derse Geç →
+                    </button>
+                  ) : (
+                    <button className="button primary study-cta" onClick={() => setActiveView("exam")} type="button">
+                      Tüm Dersler Bitti — Deneme Sınavına Gir →
+                    </button>
+                  )}
+                </div>
+              </article>
+            )}
           </section>
         )}
 
         {activeView === "exam" && renderExamRunner()}
+
+        {activeView === "memory" && <MemoryLab />}
 
         {activeView === "progress" && (
           <section className="progress-grid">
