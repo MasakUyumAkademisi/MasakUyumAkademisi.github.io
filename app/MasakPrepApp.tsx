@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -154,11 +155,26 @@ function shuffle<T>(items: T[]): T[] {
   return result;
 }
 
+function shuffleQuestionOptions(question: Question): Question {
+  const optionsWithAnswer = question.options.map((option, index) => ({
+    option,
+    isAnswer: index === question.answer,
+  }));
+  const shuffledOptions = shuffle(optionsWithAnswer);
+
+  return {
+    ...question,
+    options: shuffledOptions.map((item) => item.option),
+    answer: shuffledOptions.findIndex((item) => item.isAnswer),
+  };
+}
+
 function pickExamQuestions(mode: ExamMode) {
   const pool = mode === "mixed" ? questions : getQuestionsForModule(mode);
   const shuffled = shuffle(pool);
   const selected = shuffled.slice(0, examRules.questionCount);
-  return selected.length >= examRules.questionCount ? selected : shuffled;
+  const picked = selected.length >= examRules.questionCount ? selected : shuffled;
+  return picked.map(shuffleQuestionOptions);
 }
 
 function scoreExam(session: ExamSession): ExamResult {
@@ -274,7 +290,10 @@ export default function MasakPrepApp() {
   const studyContent = lessonContentById[studyLesson.id];
   const studyIndex = lessons.findIndex((lesson) => lesson.id === studyLesson.id);
   const lessonQuestions = useMemo(
-    () => questions.filter((question) => question.topicId === studyLesson.id),
+    () =>
+      questions
+        .filter((question) => question.topicId === studyLesson.id)
+        .map(shuffleQuestionOptions),
     [studyLesson.id],
   );
   const studyQuestion = lessonQuestions[studyQIndex];
@@ -606,7 +625,7 @@ export default function MasakPrepApp() {
         <div className="topnav-brand">
           <div className="topnav-mark" aria-hidden="true">M</div>
           <div>
-            <p className="topnav-title">MASAK Uyum Akademisi</p>
+            <p className="topnav-title">MasakUyumAkademisi</p>
             <p className="topnav-subtitle">Uyum görevlisi yetkilendirme sınavı</p>
           </div>
         </div>
