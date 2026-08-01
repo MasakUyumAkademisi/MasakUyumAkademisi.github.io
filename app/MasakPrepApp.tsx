@@ -231,7 +231,7 @@ export default function MasakPrepApp() {
     setStudyLessonId(resumeLesson.id);
     setTheme(loadTheme());
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+      navigator.serviceWorker.register(new URL("sw.js", window.location.href), { scope: "./" }).catch(() => undefined);
     }
   }, []);
 

@@ -55,8 +55,8 @@ test("keeps PWA assets and source attribution available", async () => {
 
   const parsedManifest = JSON.parse(manifest);
   assert.equal(parsedManifest.display, "standalone");
-  assert.equal(parsedManifest.start_url, "/");
-  assert.equal(parsedManifest.icons[0].src, "/app-icon.svg");
+  assert.equal(parsedManifest.start_url, ".");
+  assert.equal(parsedManifest.icons[0].src, "app-icon.svg");
   assert.match(serviceWorker, /CACHE_NAME = "masak-prep-v\d+"/);
   assert.match(serviceWorker, /offline\.html/);
   assert.match(page, /<MasakPrepApp \/>/);
