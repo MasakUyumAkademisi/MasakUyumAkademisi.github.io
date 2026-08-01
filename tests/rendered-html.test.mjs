@@ -1,3 +1,4 @@
+
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
@@ -29,7 +30,7 @@ test("server-renders the MASAK study shell", async () => {
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, /<title>MASAK Uyum Akademisi<\/title>/i);
+  assert.match(html, /<title>MasakUyumAkademisi<\/title>/i);
   assert.match(html, /Adım Adım Çalışma/);
   assert.match(html, /Çalış/);
   assert.match(html, /MASAK Başkanlığı ve Görevleri/);
@@ -68,6 +69,11 @@ test("keeps PWA assets and source attribution available", async () => {
   assert.match(component, /MemoryLab/);
   assert.match(component, /studyPhase/);
   assert.match(component, /beginLessonQuestions/);
+  assert.match(component, /function shuffleQuestionOptions/);
+  assert.match(component, /isAnswer:\s*index === question\.answer/);
+  assert.match(component, /answer:\s*shuffledOptions\.findIndex/);
+  assert.match(component, /return picked\.map\(shuffleQuestionOptions\)/);
+  assert.match(component, /\.map\(shuffleQuestionOptions\)/);
   assert.doesNotMatch(component, /SkeletonPreview|codex-preview/);
 });
 
