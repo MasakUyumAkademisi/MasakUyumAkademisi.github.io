@@ -1,5 +1,19 @@
 @import "tailwindcss";
 
+.reading-nav { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 14px 0; border-block: 1px solid var(--line); margin: 24px 0; }
+.reading-nav label { font-size: 0.85rem; color: var(--muted); }
+.reading-nav select { flex: 1; min-width: 0; width: 100%; max-width: 100%; padding: 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--foreground); }
+.academic-chapter { scroll-margin-top: 100px; }
+.study-lesson-card .study-title { font-weight: 800; line-height: 1.25; }
+.study-lesson-card .academic-chapter h3, .study-lesson-card .study-narrative h3 { font-size: 1.3rem; font-weight: 750; line-height: 1.4; color: var(--foreground); border-left: 4px solid var(--accent); padding-left: 14px; margin-bottom: 20px; }
+.exam-priority h3 { font-size: 1rem; font-weight: 750; margin: 0 0 8px; }
+.progress-sources { grid-column: 1 / -1; min-width: 0; }
+.progress-sources a { overflow-wrap: anywhere; }
+.academic-chapters, .study-narrative { max-width: 72ch; margin-inline: auto; }
+.academic-chapter p, .study-narrative p { line-height: 1.85; }
+@media (max-width: 600px) { .reading-nav select { flex-basis: 100%; } .reading-nav .button { min-height: 44px; } }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
 :root {
   color-scheme: light;
   --background: #f4f6f8;
@@ -1054,6 +1068,53 @@ a {
   width: 100%;
 }
 
+.memory-module-switch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+  padding: 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--panel);
+  box-shadow: var(--shadow-soft);
+}
+
+.memory-module-button {
+  display: grid;
+  gap: 0.15rem;
+  min-height: 3.7rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.memory-module-button span {
+  color: var(--ink);
+  font-size: 0.98rem;
+  font-weight: 800;
+}
+
+.memory-module-button small {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.memory-module-button.active {
+  border-color: color-mix(in srgb, var(--accent) 38%, transparent);
+  background: var(--accent-soft);
+}
+
+.memory-module-button.active span,
+.memory-module-button.active small {
+  color: var(--accent-strong);
+}
+
 .memory-tour-card {
   display: grid;
   gap: 1rem;
@@ -1130,3 +1191,23 @@ a {
 
 @media (max-width: 520px) {
 }
+/* Account dialog uses the existing application palette. */
+.account-backdrop { position:fixed; inset:0; z-index:100; background:rgba(0,0,0,.55); display:grid; place-items:center; padding:16px; }
+.account-panel { width:min(460px,100%); max-height:90dvh; overflow:auto; border-radius:8px; padding:24px; background:var(--panel,#fff); color:var(--ink,#172126); }
+.account-panel label { display:block; margin:12px 0; }
+.account-panel input { display:block; width:100%; padding:12px; border:1px solid #aab7bc; border-radius:4px; font:inherit; }
+.account-panel button { margin:6px 6px 6px 0; padding:10px 14px; min-height:44px; }
+.account-panel p { font-size:14px; line-height:1.6; }
+/* Academic lessons preserve the existing application navigation and themes. */
+.academic-chapter { padding: 1.2rem 0; border-bottom: 1px solid var(--line, #dce1e5); scroll-margin-top: 90px; }
+.academic-chapter p, .study-narrative p { font-family: Georgia, "Times New Roman", serif; font-size: 1.06rem; line-height: 1.9; max-width: 75ch; }
+.academic-outline, .academic-case, .academic-sources, .academic-exam-notes { margin: 1rem 0; }
+.academic-outline summary, .academic-case summary, .academic-sources summary, .academic-exam-notes summary { cursor: pointer; padding: .65rem 0; font-weight: 600; }
+.academic-outline a { color: inherit; text-underline-offset: 3px; }
+.academic-outline li { margin: .5rem 0; }
+.academic-recall { border-top: 1px solid var(--line, #dce1e5); margin-top: 1.5rem; padding-top: 1rem; }
+.academic-recall-question { margin: 1rem 0; }
+.academic-recall-question label { display: block; margin-bottom: .6rem; font-weight: 600; }
+.academic-recall-question textarea { width: 100%; min-height: 100px; resize: vertical; color: inherit; background: transparent; border: 1px solid var(--line, #dce1e5); border-radius: 4px; padding: .75rem; font: inherit; box-sizing: border-box; }
+.academic-recall-question details { margin-top: .5rem; }
+.academic-review-actions { display: flex; gap: .5rem; flex-wrap: wrap; }

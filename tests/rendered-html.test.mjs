@@ -1,4 +1,3 @@
-
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
@@ -37,7 +36,7 @@ test("server-renders the MASAK study shell", async () => {
   assert.match(html, /Sınavda Çıkar/);
   assert.match(html, /Mutlaka Bil/);
   assert.match(html, /Soruları Çöz/);
-  assert.match(html, /Hafıza/);
+  assert.doesNotMatch(html, /Hafıza|Öz değerlendirme|Hızlı Tekrar Kartları/);
   assert.doesNotMatch(html, /Bugün/);
   assert.doesNotMatch(html, /<h2 class="section-title">Kaynaklar<\/h2>/);
   assert.match(html, /manifest\.webmanifest/);
@@ -66,7 +65,7 @@ test("keeps PWA assets and source attribution available", async () => {
   assert.match(component, /masak-prep-progress-v2/);
   assert.match(component, /masak-prep-theme/);
   assert.match(component, /theme-toggle/);
-  assert.match(component, /MemoryLab/);
+  assert.doesNotMatch(component, /MemoryLab|AcademicRecall|flippedTerms/);
   assert.match(component, /studyPhase/);
   assert.match(component, /beginLessonQuestions/);
   assert.match(component, /function shuffleQuestionOptions/);
@@ -75,6 +74,20 @@ test("keeps PWA assets and source attribution available", async () => {
   assert.match(component, /return picked\.map\(shuffleQuestionOptions\)/);
   assert.match(component, /\.map\(shuffleQuestionOptions\)/);
   assert.doesNotMatch(component, /SkeletonPreview|codex-preview/);
+});
+
+test("keeps memory cards module-scoped and shuffled", async () => {
+  const memoryLab = await readFile(new URL("../app/MemoryLab.tsx", import.meta.url), "utf8");
+
+  assert.match(memoryLab, /activeModuleId/);
+  assert.match(memoryLab, /memory-module-switch/);
+  assert.match(memoryLab, /role="tablist"/);
+  assert.match(memoryLab, /function shuffle<T>/);
+  assert.match(memoryLab, /Math\.random\(\)/);
+  assert.match(memoryLab, /prepareModuleRound/);
+  assert.match(memoryLab, /getLessonModuleId\(card\.lessonId\) === moduleId/);
+  assert.match(memoryLab, /recallDrills\.filter\(\(drill\) => getLessonModuleId\(drill\.lessonId\) === moduleId\)/);
+  assert.match(memoryLab, /allPalaceStops\.filter\(\(stop\) => stop\.moduleId === moduleId\)/);
 });
 
 test("validates expanded lesson and question bank data", () => {

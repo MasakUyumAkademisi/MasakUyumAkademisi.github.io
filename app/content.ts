@@ -1,3 +1,7 @@
+import academicData from "./academic-content.json";
+
+export const academicLessonById: Record<string, typeof academicData.aklama> = academicData;
+
 export type ModuleId = "mod1" | "mod2";
 export type Difficulty = "Temel" | "Orta" | "Sınav";
 
@@ -1271,6 +1275,7 @@ function buildLessonContent(lesson: Lesson): LessonContent {
   const blueprint = lessonV4Blueprints[lesson.id];
   const density = densityByPriority[base.priority];
   const sourceTrace = `${base.pdfRange}; ${lesson.sourceRef}`;
+  const academic = academicLessonById[lesson.id];
 
   return {
     ...base,
@@ -1284,6 +1289,16 @@ function buildLessonContent(lesson: Lesson): LessonContent {
     pitfalls: buildPitfalls(base, density.pitfalls),
     glossary: [...base.reviewCards, ...blueprint.glossary],
     miniQuiz: buildMiniQuiz(lesson, base, density.quiz),
+    ...(academic ? {
+      coreNarrative: academic.lecture[0].body,
+      overview: academic.summary,
+      sourceTrace: academic.sourceTrace,
+      pdfRange: academic.sourceTrace,
+      legalAnchors: [academic.legalAnchor],
+      estimatedMinutes: Math.ceil(academic.wordCount / 120),
+      deepDiveSections: academic.lecture.slice(1).map(({ title, body, sourceTrace }) => ({ title, body, sourceTrace })),
+      caseStudies: [{ ...academic.caseStudy, sourceTrace: academic.sourceTrace }],
+    } : {}),
   };
 }
 

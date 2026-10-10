@@ -1,8 +1,8 @@
-
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
 import {
+  academicLessonById,
   examRules,
   getLessonById,
   getModuleById,
@@ -14,9 +14,11 @@ import {
   type ModuleId,
   type Question,
 } from "./content";
-import MemoryLab from "./MemoryLab";
+import AccountPanel from "./AccountPanel";
+import ReadingNav from "./ReadingNav";
+import { accountStorageKey } from "./account-storage";
 
-type ViewId = "study" | "exam" | "memory" | "progress";
+type ViewId = "study" | "exam" | "progress";
 type ExamMode = ModuleId | "mixed";
 type AnswerMap = Record<string, number>;
 type StudyPhase = "lesson" | "questions" | "done";
@@ -61,7 +63,6 @@ type ProgressState = {
 const navItems: { id: ViewId; label: string; icon: string }[] = [
   { id: "study", label: "Çalış", icon: "Ç" },
   { id: "exam", label: "Deneme", icon: "T" },
-  { id: "memory", label: "Hafıza", icon: "H" },
   { id: "progress", label: "İlerleme", icon: "İ" },
 ];
 
@@ -75,11 +76,6 @@ const viewCopy: Record<ViewId, { eyebrow: string; title: string; subtitle: strin
     eyebrow: "Süreli Simülasyon",
     title: "Deneme",
     subtitle: "50 soru, 45 dakika, boş/işaretli soru takibi ve resmi başarı kriteri.",
-  },
-  memory: {
-    eyebrow: "Doping Hafıza Teknikleri",
-    title: "Hafıza",
-    subtitle: "Aralıklı tekrar, mnemonikler, hafıza sarayı ve aktif hatırlama ile kalıcı öğrenme.",
   },
   progress: {
     eyebrow: "Performans",
@@ -231,8 +227,9 @@ export default function MasakPrepApp() {
   const [progress, setProgress] = useState<ProgressState>(defaultProgress);
   const [examSession, setExamSession] = useState<ExamSession | null>(null);
   const [lastResult, setLastResult] = useState<ExamResult | null>(null);
-  const [flippedTerms, setFlippedTerms] = useState<string[]>([]);
   const [theme, setTheme] = useState<ThemeMode>("light");
+  const [accountOwner, setAccountOwner] = useState<string | null>(null);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     // Hydrate from localStorage after mount (SSR-safe: server and first client
@@ -246,14 +243,16 @@ export default function MasakPrepApp() {
       lessons.find((lesson) => !loadedProgress.completedLessons.includes(lesson.id)) ?? lessons[lessons.length - 1];
     setStudyLessonId(resumeLesson.id);
     setTheme(loadTheme());
+    setHydrated(true);
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register(new URL("sw.js", window.location.href), { scope: "./" }).catch(() => undefined);
     }
   }, []);
 
   useEffect(() => {
-    window.localStorage.setItem("masak-prep-progress-v2", JSON.stringify(progress));
-  }, [progress]);
+    if (!hydrated) return;
+    window.localStorage.setItem(accountStorageKey("masak-prep-progress-v2"), JSON.stringify(progress));
+  }, [progress, hydrated, accountOwner]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -625,7 +624,7 @@ export default function MasakPrepApp() {
         <div className="topnav-brand">
           <div className="topnav-mark" aria-hidden="true">M</div>
           <div>
-            <p className="topnav-title">MasakUyumAkademisi</p>
+            <p className="topnav-title">Uyum Akademisi</p>
             <p className="topnav-subtitle">Uyum görevlisi yetkilendirme sınavı</p>
           </div>
         </div>
@@ -643,6 +642,15 @@ export default function MasakPrepApp() {
           ))}
         </nav>
         <div className="topnav-actions">
+          {hydrated && <AccountPanel progress={progress} empty={defaultProgress} onLoad={(value, owner) => {
+            setProgress(value);
+            setAccountOwner(owner);
+            setExamSession(null);
+            setLastResult(null);
+            setStudyPhase("lesson");
+            setStudyAnswer(null);
+            setStudyScore({ correct: 0, total: 0 });
+          }} />}
           <span className="topnav-meta">Mevzuat kontrol: {examRules.legislationCheckedAt}</span>
           <button
             aria-label={theme === "dark" ? "Açık moda geç" : "Koyu moda geç"}
@@ -707,15 +715,22 @@ export default function MasakPrepApp() {
               <article className="panel panel-inner study-lesson-card">
                 <p className="eyebrow">{getModuleById(studyLesson.moduleId).shortName}</p>
                 <h2 className="page-title study-title">{studyLesson.title}</h2>
-                <p className="study-lead">{studyLesson.summary}</p>
-                <section className="study-mustknow study-narrative">
-                  <h3>Konu Anlatımı</h3>
-                  <p>{studyContent.coreNarrative}</p>
-                </section>
-                <div className="callout focus-callout">
-                  <p className="callout-title">Sınavda Çıkar</p>
+                <p className="study-lead">{studyContent.overview}</p>
+                <p className="hint-text">{studyLesson.officialQuestionCount} soru · {studyContent.estimatedMinutes} dk okuma</p>
+                <section className="callout focus-callout exam-priority">
+                  <h3>Sınavda Çıkar</h3>
                   <p>{studyContent.examFocus}</p>
-                </div>
+                </section>
+                <section className="study-mustknow study-narrative">
+                  <h3>Kavramsal ve hukuki çerçeve</h3>
+                  {studyContent.coreNarrative.split("\n\n").map((paragraph, index) => <p key={index}>{paragraph}</p>)}
+                </section>
+                <ReadingNav key={`${accountOwner ?? "guest"}:${studyLesson.id}`} lessonId={studyLesson.id} titles={studyContent.deepDiveSections.map((section) => section.title)} />
+                <div className="academic-chapters">{studyContent.deepDiveSections.map((section, index) => <section id={`academic-${studyLesson.id}-${index}`} tabIndex={-1} className="academic-chapter" key={section.title}>
+                  <h3>{index + 1}. {section.title}</h3>
+                  {section.body.split("\n\n").map((paragraph, paragraphIndex) => <p key={paragraphIndex}>{paragraph}</p>)}
+                </section>)}</div>
+                <details className="academic-exam-notes"><summary>Sınav notları ve kritik ayrımlar</summary>
                 <section className="study-mustknow">
                   <h3>Mutlaka Bil</h3>
                   <ul>{studyContent.mustKnow.map((item) => <li key={item}>{item}</li>)}</ul>
@@ -723,49 +738,9 @@ export default function MasakPrepApp() {
 
                 {studyExpanded && (
                   <>
-                    <section className="review-section">
-                      <div className="section-head">
-                        <h3>Derinlemesine</h3>
-                        <span className="hint-text">Sınavda bu ayrımlar çeldirici olarak kullanılır</span>
-                      </div>
-                      <div className="deepdive-list">
-                        {studyContent.deepDiveSections.map((section) => (
-                          <div className="deepdive-item" key={section.title}>
-                            <p className="deepdive-title">{section.title}</p>
-                            <p className="deepdive-body">{section.body}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </section>
                     <section className="study-mustknow">
                       <h3>Kritik Ayrımlar</h3>
                       <ul>{studyContent.pitfalls.map((item) => <li key={item}>{item}</li>)}</ul>
-                    </section>
-                    <section className="review-section">
-                      <div className="section-head">
-                        <h3>Hızlı Tekrar Kartları</h3>
-                        <span className="hint-text">Önce hatırlamayı deneyin, sonra karta dokunup kontrol edin</span>
-                      </div>
-                      <div className="card-grid">
-                        {studyContent.glossary.map((card) => {
-                          const isFlipped = flippedTerms.includes(card.term);
-                          return (
-                            <button
-                              className={`study-card flip-card ${isFlipped ? "flipped" : ""}`}
-                              key={card.term}
-                              onClick={() =>
-                                setFlippedTerms((current) =>
-                                  current.includes(card.term) ? current.filter((term) => term !== card.term) : [...current, card.term],
-                                )
-                              }
-                              type="button"
-                            >
-                              <span className="study-card-term">{card.term}</span>
-                              <span className="study-card-detail">{isFlipped ? card.detail : "Tanımı görmek için dokunun"}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
                     </section>
                   </>
                 )}
@@ -777,6 +752,7 @@ export default function MasakPrepApp() {
                 >
                   {studyExpanded ? "Daha az göster" : "Daha fazla detay göster"}
                 </button>
+                </details>
 
                 <button className="button primary study-cta" onClick={beginLessonQuestions} type="button">
                   Soruları Çöz ({lessonQuestions.length} soru) →
@@ -861,7 +837,6 @@ export default function MasakPrepApp() {
 
         {activeView === "exam" && renderExamRunner()}
 
-        {activeView === "memory" && <MemoryLab />}
 
         {activeView === "progress" && (
           <section className="progress-grid">
@@ -889,13 +864,21 @@ export default function MasakPrepApp() {
             <aside className="panel panel-inner">
               <h2 className="section-title">Tekrar Önerisi</h2>
               <p className="section-subtitle">Son oturum: {progress.lastSession}</p>
-              <p className="section-subtitle">Mevzuat son kontrol: {progress.lastLegislationCheck}</p>
               <div className="weak-list" style={{ marginTop: "1rem" }}>
                 {(weakLessons.length ? weakLessons.slice(0, 8) : ["ŞİB", "Müşterinin Tanınması", "Uyum Yönetimi"]).map((item) => (
                   <span className="tag" key={item}>{item}</span>
                 ))}
               </div>
             </aside>
+            <section className="panel panel-inner progress-sources">
+              <h2 className="section-title">Kaynak ve Güncellik Kontrolü</h2>
+              <p className="section-subtitle">Kayıtlı son mevzuat kontrolü: {progress.lastLegislationCheck}. Bu tarih otomatik doğrulama anlamına gelmez.</p>
+              {lessons.map((lesson) => <details className="academic-sources" key={lesson.id}>
+                <summary>{lesson.title}</summary>
+                <p>{lessonContentById[lesson.id].sourceTrace}</p>
+                {academicLessonById[lesson.id]?.sources.map((source) => <p key={source.url}><a href={source.url} target="_blank" rel="noopener noreferrer">{source.title}</a><br /><span className="hint-text">{source.status}</span></p>)}
+              </details>)}
+            </section>
           </section>
         )}
       </main>
