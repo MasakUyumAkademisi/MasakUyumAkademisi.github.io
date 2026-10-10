@@ -14,7 +14,6 @@ import {
   type ModuleId,
   type Question,
 } from "./content";
-import AccountPanel from "./AccountPanel";
 import ReadingNav from "./ReadingNav";
 import { accountStorageKey } from "./account-storage";
 
@@ -228,7 +227,6 @@ export default function MasakPrepApp() {
   const [examSession, setExamSession] = useState<ExamSession | null>(null);
   const [lastResult, setLastResult] = useState<ExamResult | null>(null);
   const [theme, setTheme] = useState<ThemeMode>("light");
-  const [accountOwner, setAccountOwner] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -252,7 +250,7 @@ export default function MasakPrepApp() {
   useEffect(() => {
     if (!hydrated) return;
     window.localStorage.setItem(accountStorageKey("masak-prep-progress-v2"), JSON.stringify(progress));
-  }, [progress, hydrated, accountOwner]);
+  }, [progress, hydrated]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -642,15 +640,6 @@ export default function MasakPrepApp() {
           ))}
         </nav>
         <div className="topnav-actions">
-          {hydrated && <AccountPanel progress={progress} empty={defaultProgress} onLoad={(value, owner) => {
-            setProgress(value);
-            setAccountOwner(owner);
-            setExamSession(null);
-            setLastResult(null);
-            setStudyPhase("lesson");
-            setStudyAnswer(null);
-            setStudyScore({ correct: 0, total: 0 });
-          }} />}
           <span className="topnav-meta">Mevzuat kontrol: {examRules.legislationCheckedAt}</span>
           <button
             aria-label={theme === "dark" ? "Açık moda geç" : "Koyu moda geç"}
@@ -725,7 +714,7 @@ export default function MasakPrepApp() {
                   <h3>Kavramsal ve hukuki çerçeve</h3>
                   {studyContent.coreNarrative.split("\n\n").map((paragraph, index) => <p key={index}>{paragraph}</p>)}
                 </section>
-                <ReadingNav key={`${accountOwner ?? "guest"}:${studyLesson.id}`} lessonId={studyLesson.id} titles={studyContent.deepDiveSections.map((section) => section.title)} />
+                <ReadingNav key={studyLesson.id} lessonId={studyLesson.id} titles={studyContent.deepDiveSections.map((section) => section.title)} />
                 <div className="academic-chapters">{studyContent.deepDiveSections.map((section, index) => <section id={`academic-${studyLesson.id}-${index}`} tabIndex={-1} className="academic-chapter" key={section.title}>
                   <h3>{index + 1}. {section.title}</h3>
                   {section.body.split("\n\n").map((paragraph, paragraphIndex) => <p key={paragraphIndex}>{paragraph}</p>)}
@@ -871,6 +860,12 @@ export default function MasakPrepApp() {
               </div>
             </aside>
             <section className="panel panel-inner progress-sources">
+              <details className="academic-sources">
+                <summary>Çerez ve Tarayıcı Depolaması Bilgilendirmesi</summary>
+                <p>MASAK Uyum Akademisi, ders ve deneme ilerlemenizi, okuma konumunuzu ve görünüm tercihinizi bu tarayıcıda yerel depolama (localStorage) ile saklar. Çevrimdışı kullanım için uygulama dosyaları service worker önbelleğinde tutulur. Bunlar çerezlerden farklı tarayıcı depolama yöntemleridir.</p>
+                <p>Bu sürümde hesap açma veya e-posta toplama özelliği bulunmaz. Uygulama kodunda reklam ve analiz çerezleri kullanılmaz. Site GitHub Pages üzerinde barındırılır; barındırma sağlayıcısı bağlantı sırasında IP adresi gibi teknik verileri kendi politikası kapsamında işleyebilir. <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener noreferrer">GitHub Gizlilik Bildirimi</a></p>
+                <p>Tarayıcınızın site verilerini temizleyerek yerel kayıtları silebilirsiniz; bu işlem çalışma ilerlemenizi de kaldırır. Kayıtlar cihazlar arasında eşitlenmez. Bu bilgilendirme açık rıza talebi değildir.</p>
+              </details>
               <h2 className="section-title">Kaynak ve Güncellik Kontrolü</h2>
               <p className="section-subtitle">Kayıtlı son mevzuat kontrolü: {progress.lastLegislationCheck}. Bu tarih otomatik doğrulama anlamına gelmez.</p>
               {lessons.map((lesson) => <details className="academic-sources" key={lesson.id}>

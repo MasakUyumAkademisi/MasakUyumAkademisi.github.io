@@ -37,7 +37,10 @@ const assert = require("node:assert/strict");
     assert.ok(await page.locator(".study-question-card").isVisible());
     await page.getByRole("button", { name: /İlerleme/ }).click();
     assert.ok(await page.getByRole("heading", { name: "Kaynak ve Güncellik Kontrolü" }).isVisible());
-    assert.equal(await page.locator(".progress-sources details").count(), 14);
+    assert.equal(await page.locator(".progress-sources details").count(), 15);
+    assert.equal(await page.getByRole("button", { name: "Giriş", exact: true }).count(), 0);
+    await page.getByText("Çerez ve Tarayıcı Depolaması Bilgilendirmesi", { exact: true }).click();
+    assert.ok(await page.getByText(/Bu sürümde hesap açma veya e-posta toplama/).isVisible());
     assert.deepEqual(errors, []);
     console.log("Academic rendering, simplified UI, storage preservation, question flow and mobile widths passed");
   } finally { await browser.close(); }
