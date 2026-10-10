@@ -15,6 +15,7 @@ import {
   type Question,
 } from "./content";
 import ReadingNav from "./ReadingNav";
+import StorageNotice from "./StorageNotice";
 import { accountStorageKey } from "./account-storage";
 
 type ViewId = "study" | "exam" | "progress";
@@ -618,6 +619,7 @@ export default function MasakPrepApp() {
 
   return (
     <div className="app-shell" data-theme={theme}>
+      <StorageNotice />
       <header className="topnav">
         <div className="topnav-brand">
           <div className="topnav-mark" aria-hidden="true">M</div>
