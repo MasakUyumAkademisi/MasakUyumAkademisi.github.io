@@ -15,6 +15,7 @@ import {
   type Question,
 } from "./content";
 import ReadingNav from "./ReadingNav";
+import AnnotatedReading from "./AnnotatedReading";
 import StorageNotice from "./StorageNotice";
 import SchemaLibrary from "./SchemaLibrary";
 import { accountStorageKey } from "./account-storage";
@@ -239,10 +240,10 @@ export default function MasakPrepApp() {
   const [resetMessage, setResetMessage] = useState("");
 
   function resetProgress() {
-    if (!window.confirm("Tamamlanan dersler, soru sonuçları, deneme geçmişi ve okuma konumları silinecek. Bu işlem geri alınamaz. İlerlemeyi sıfırlamak istiyor musun?")) return;
+    if (!window.confirm("Tamamlanan dersler, soru sonuçları, deneme geçmişi, okuma konumları ve kişisel notlar silinecek. Bu işlem geri alınamaz. İlerlemeyi sıfırlamak istiyor musun?")) return;
     try {
       const keys = ["masak-prep-progress-v1", "masak-prep-progress-v2", "masak-prep-srs-v1", "masak-prep-recall-v1", "masak-prep-tour-cursor-v1", "masak-academic-recall-v1"];
-      const readingKeys = lessons.map((lesson) => `masak-reading-position:${lesson.id}`);
+      const readingKeys = lessons.flatMap((lesson) => [`masak-reading-position:${lesson.id}`, `masak-reading-notes:${lesson.id}`]);
       [...keys, ...readingKeys].forEach((key) => window.localStorage.removeItem(accountStorageKey(key)));
       window.localStorage.setItem(accountStorageKey("masak-prep-progress-v2"), JSON.stringify(defaultProgress));
       setProgress(defaultProgress);
@@ -652,7 +653,7 @@ export default function MasakPrepApp() {
       <StorageNotice />
       <header className="topnav">
         <div className="topnav-brand">
-          <div className="topnav-mark" aria-hidden="true">M</div>
+          <img className="topnav-mark" src="app-icon.svg" alt="" width={40} height={40} />
           <div>
             <p className="topnav-title">Uyum Akademisi</p>
             <p className="topnav-subtitle">Uyum görevlisi yetkilendirme sınavı</p>
@@ -747,10 +748,7 @@ export default function MasakPrepApp() {
                   {studyContent.coreNarrative.split("\n\n").map((paragraph, index) => <p key={index}>{paragraph}</p>)}
                 </section>
                 <ReadingNav key={studyLesson.id} lessonId={studyLesson.id} titles={studyContent.deepDiveSections.map((section) => section.title)} />
-                <div className="academic-chapters">{studyContent.deepDiveSections.map((section, index) => <section id={`academic-${studyLesson.id}-${index}`} tabIndex={-1} className="academic-chapter" key={section.title}>
-                  <h3>{index + 1}. {section.title}</h3>
-                  {section.body.split("\n\n").map((paragraph, paragraphIndex) => <p key={paragraphIndex}>{paragraph}</p>)}
-                </section>)}</div>
+                <AnnotatedReading key={studyLesson.id} lessonId={studyLesson.id} sections={studyContent.deepDiveSections} />
                 <details className="academic-exam-notes exam-visual"><summary>Sınav notları ve kritik ayrımlar</summary>
                 <section className="study-mustknow exam-checklist">
                   <h3>Mutlaka Bil</h3>

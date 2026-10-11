@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+.academic-chapters mark { background:#ffe49b; color:#242016; border-bottom:2px solid #b77910; cursor:pointer; border-radius:2px; }
+.academic-chapters mark:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+.reading-note-panel { width:min(100%,440px); margin:12px 0 24px auto; padding:12px; border-left:3px solid var(--accent); background:var(--panel-soft); color:var(--foreground); border-radius:4px; }
+.reading-note-panel label { display:block; margin-bottom:6px; font-size:.8rem; font-weight:650; }
+.reading-note-panel label span { color:var(--muted); font-weight:400; }
+.reading-note-panel textarea { display:block; width:100%; resize:vertical; min-height:64px; padding:8px; border:1px solid var(--line); border-radius:4px; background:var(--panel); color:var(--foreground); font-size:.85rem; }
+.reading-note-actions { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+.reading-note-actions .button { min-height:36px; padding:6px 10px; font-size:.75rem; }
+@media(max-width:600px) { .reading-note-actions .button { min-height:44px; } }
+
 .schema-controls { display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding-block:16px; border-bottom:1px solid var(--line); }
 .schema-infographic { margin:24px 0; }
 .schema-infographic img { display:block; width:100%; height:auto; border-radius:6px; }
