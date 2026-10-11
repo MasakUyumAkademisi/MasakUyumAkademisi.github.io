@@ -44,6 +44,58 @@ const assert = require("node:assert/strict");
     assert.equal(await page.getByRole("button", { name: "Giriş", exact: true }).count(), 0);
     await page.getByText("Çerez ve Tarayıcı Depolaması Bilgilendirmesi", { exact: true }).click();
     assert.ok(await page.getByText(/Bu sürümde hesap açma veya e-posta toplama/).isVisible());
+    await page.getByRole("button", { name: "Şemalar", exact: true }).click();
+    assert.equal(await page.locator("#schema-topic option").count(), 9);
+    for (const module of ["Modül 1", "Modül 2"]) {
+      await page.getByRole("button", { name: module, exact: true }).click();
+      const topics = await page.locator("#schema-topic option").evaluateAll((options) => options.map((option) => option.value));
+      for (const topic of topics) {
+        await page.getByLabel("Konu", { exact: true }).selectOption(topic);
+        await page.locator(".schema-infographic img").scrollIntoViewIfNeeded();
+        await page.waitForFunction((id) => {
+          const img = document.querySelector(".schema-infographic img");
+          return img?.src.endsWith(`${id}-detayli-sema.jpg`) && img.complete && img.naturalWidth > 0;
+        }, topic);
+        assert.ok(await page.locator(".schema-infographic a").getAttribute("href"));
+      }
+    }
+    await page.getByRole("button", { name: "Modül 1", exact: true }).click();
+    await page.getByLabel("Konu", { exact: true }).selectOption("aklama");
+    await page.locator(".schema-infographic img").waitFor();
+    await page.locator(".schema-infographic img").scrollIntoViewIfNeeded();
+    await page.waitForFunction(() => document.querySelector(".schema-infographic img").naturalWidth > 0);
+    await page.getByLabel("Konu", { exact: true }).selectOption("sib");
+    await page.locator(".schema-infographic img").scrollIntoViewIfNeeded();
+    await page.waitForFunction(() => document.querySelector(".schema-infographic img").naturalWidth > 0);
+    await page.getByRole("button", { name: "Modül 2", exact: true }).click();
+    assert.equal(await page.locator("#schema-topic option").count(), 5);
+    await page.getByLabel("Konu", { exact: true }).selectOption("musterinin-taninmasi");
+    await page.locator(".schema-infographic img").scrollIntoViewIfNeeded();
+    await page.waitForFunction(() => document.querySelector(".schema-infographic img").naturalWidth > 0);
+    for (const width of [320, 390, 1400]) {
+      await page.setViewportSize({ width, height: 844 });
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false);
+    }
+    await page.screenshot({ path: "/tmp/masak-schemas.png" });
+    await page.getByRole("button", { name: "İlgili dersi aç" }).click();
+    assert.ok(await page.locator(".study-lesson-card").isVisible());
+    await page.getByRole("button", { name: "İlerleme", exact: true }).click();
+    const beforeReset = await page.evaluate(() => ({ progress: localStorage.getItem("masak-prep-progress-v2"), theme: localStorage.getItem("masak-prep-theme"), notice: localStorage.getItem("masak-storage-notice-read-v1") }));
+    page.once("dialog", (dialog) => dialog.dismiss());
+    await page.getByRole("button", { name: "İlerlemeyi sıfırla", exact: true }).click();
+    assert.equal(await page.evaluate(() => localStorage.getItem("masak-prep-progress-v2")), beforeReset.progress);
+    page.once("dialog", (dialog) => dialog.accept());
+    await page.getByRole("button", { name: "İlerlemeyi sıfırla", exact: true }).click();
+    await page.getByRole("status").filter({ hasText: "İlerleme sıfırlandı" }).waitFor();
+    await page.reload();
+    await page.waitForSelector(".academic-chapter");
+    const reset = await page.evaluate(() => ({ progress: JSON.parse(localStorage.getItem("masak-prep-progress-v2")), reading: localStorage.getItem("masak-reading-position:masak-gorevleri"), theme: localStorage.getItem("masak-prep-theme"), notice: localStorage.getItem("masak-storage-notice-read-v1") }));
+    assert.deepEqual(reset.progress.completedLessons, []);
+    assert.deepEqual(reset.progress.answered, {});
+    assert.deepEqual(reset.progress.examHistory, []);
+    assert.equal(reset.reading, null);
+    assert.equal(reset.theme, beforeReset.theme);
+    assert.equal(reset.notice, beforeReset.notice);
     assert.deepEqual(errors, []);
     console.log("Academic rendering, simplified UI, storage preservation, question flow and mobile widths passed");
   } finally { await browser.close(); }

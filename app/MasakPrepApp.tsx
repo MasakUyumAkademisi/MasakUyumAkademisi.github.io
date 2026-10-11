@@ -16,9 +16,10 @@ import {
 } from "./content";
 import ReadingNav from "./ReadingNav";
 import StorageNotice from "./StorageNotice";
+import SchemaLibrary from "./SchemaLibrary";
 import { accountStorageKey } from "./account-storage";
 
-type ViewId = "study" | "exam" | "progress";
+type ViewId = "study" | "exam" | "schemas" | "progress";
 type ExamMode = ModuleId | "mixed";
 type AnswerMap = Record<string, number>;
 type StudyPhase = "lesson" | "questions" | "done";
@@ -63,6 +64,7 @@ type ProgressState = {
 const navItems: { id: ViewId; label: string; icon: string }[] = [
   { id: "study", label: "Çalış", icon: "Ç" },
   { id: "exam", label: "Deneme", icon: "T" },
+  { id: "schemas", label: "Şemalar", icon: "Ş" },
   { id: "progress", label: "İlerleme", icon: "İ" },
 ];
 
@@ -76,6 +78,11 @@ const viewCopy: Record<ViewId, { eyebrow: string; title: string; subtitle: strin
     eyebrow: "Süreli Simülasyon",
     title: "Deneme",
     subtitle: "50 soru, 45 dakika, boş/işaretli soru takibi ve resmi başarı kriteri.",
+  },
+  schemas: {
+    eyebrow: "Görsel Konu Haritaları",
+    title: "Şemalar",
+    subtitle: "Modül 1 ve Modül 2",
   },
   progress: {
     eyebrow: "Performans",
@@ -229,6 +236,29 @@ export default function MasakPrepApp() {
   const [lastResult, setLastResult] = useState<ExamResult | null>(null);
   const [theme, setTheme] = useState<ThemeMode>("light");
   const [hydrated, setHydrated] = useState(false);
+  const [resetMessage, setResetMessage] = useState("");
+
+  function resetProgress() {
+    if (!window.confirm("Tamamlanan dersler, soru sonuçları, deneme geçmişi ve okuma konumları silinecek. Bu işlem geri alınamaz. İlerlemeyi sıfırlamak istiyor musun?")) return;
+    try {
+      const keys = ["masak-prep-progress-v1", "masak-prep-progress-v2", "masak-prep-srs-v1", "masak-prep-recall-v1", "masak-prep-tour-cursor-v1", "masak-academic-recall-v1"];
+      const readingKeys = lessons.map((lesson) => `masak-reading-position:${lesson.id}`);
+      [...keys, ...readingKeys].forEach((key) => window.localStorage.removeItem(accountStorageKey(key)));
+      window.localStorage.setItem(accountStorageKey("masak-prep-progress-v2"), JSON.stringify(defaultProgress));
+      setProgress(defaultProgress);
+      setExamSession(null);
+      setLastResult(null);
+      setStudyLessonId(lessons[0].id);
+      setStudyPhase("lesson");
+      setStudyQIndex(0);
+      setStudyAnswer(null);
+      setStudyScore({ correct: 0, total: 0 });
+      setStudyExpanded(false);
+      setResetMessage("İlerleme sıfırlandı. Görünüm tercihin korundu.");
+    } catch {
+      setResetMessage("Tarayıcı kayıtları silinemedi. Site depolama izinlerini kontrol edip tekrar dene.");
+    }
+  }
 
   useEffect(() => {
     // Hydrate from localStorage after mount (SSR-safe: server and first client
@@ -721,8 +751,8 @@ export default function MasakPrepApp() {
                   <h3>{index + 1}. {section.title}</h3>
                   {section.body.split("\n\n").map((paragraph, paragraphIndex) => <p key={paragraphIndex}>{paragraph}</p>)}
                 </section>)}</div>
-                <details className="academic-exam-notes"><summary>Sınav notları ve kritik ayrımlar</summary>
-                <section className="study-mustknow">
+                <details className="academic-exam-notes exam-visual"><summary>Sınav notları ve kritik ayrımlar</summary>
+                <section className="study-mustknow exam-checklist">
                   <h3>Mutlaka Bil</h3>
                   <ul>{studyContent.mustKnow.map((item) => <li key={item}>{item}</li>)}</ul>
                 </section>
@@ -731,7 +761,7 @@ export default function MasakPrepApp() {
                   <>
                     <section className="study-mustknow">
                       <h3>Kritik Ayrımlar</h3>
-                      <ul>{studyContent.pitfalls.map((item) => <li key={item}>{item}</li>)}</ul>
+                      <ul className="pitfall-list">{studyContent.pitfalls.map((item) => <li key={item}>{item}</li>)}</ul>
                     </section>
                   </>
                 )}
@@ -741,7 +771,7 @@ export default function MasakPrepApp() {
                   onClick={() => setStudyExpanded((current) => !current)}
                   type="button"
                 >
-                  {studyExpanded ? "Daha az göster" : "Daha fazla detay göster"}
+                  {studyExpanded ? "Kritik ayrımları gizle" : "Kritik ayrımları göster"}
                 </button>
                 </details>
 
@@ -827,12 +857,15 @@ export default function MasakPrepApp() {
         )}
 
         {activeView === "exam" && renderExamRunner()}
+        {activeView === "schemas" && <SchemaLibrary onStudy={(id) => { goToLesson(id); setActiveView("study"); }} />}
 
 
         {activeView === "progress" && (
           <section className="progress-grid">
             <div className="panel panel-inner">
               <h2 className="section-title">İlerleme ve Deneme Geçmişi</h2>
+              <button className="button ghost" type="button" onClick={resetProgress}>İlerlemeyi sıfırla</button>
+              {resetMessage && <p role="status">{resetMessage}</p>}
               <div className="bar-list">
                 <div className="bar-row"><div className="bar-label"><span>Ders tamamlama</span><span>{completedRatio}%</span></div><div className="bar-track"><div className="bar-fill" style={{ width: `${completedRatio}%` }} /></div></div>
                 <div className="bar-row"><div className="bar-label"><span>Genel doğruluk ({answeredCount} soru çözüldü)</span><span>{accuracy}%</span></div><div className="bar-track"><div className="bar-fill" style={{ width: `${accuracy}%` }} /></div></div>
